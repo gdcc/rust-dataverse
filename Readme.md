@@ -2,68 +2,94 @@
 
 This is a Rust client for the Dataverse API. It is a work in progress and is not yet feature complete.
 
-# File: client.rs
+## Installation
 
-This file defines the `BaseClient` struct and its associated methods.
+**Command line**
 
-## Struct: BaseClient
+```bash
+cargo build --bin dvcli --release
+```
 
-This struct represents a client that can make HTTP requests. It contains the base URL for requests, an optional API token, and a `Client` instance from the `reqwest` library.
+**Cargo.toml**
 
-### Method: new
+Please note, this crate is not yet published on crates.io. You can add it to your `Cargo.toml` file by pointing to the GitHub repository.
 
-This method creates a new `BaseClient`. It takes a base URL and an optional API token as parameters.
+```toml
+[dependencies]
+dataverse = { git = "https://github.com/JR-1991/rust-dataverse" }
+```
 
-### Method: get
+## Usage
 
-This method sends a GET request to the specified path. It takes a path and an optional map of parameters as arguments.
+### Command line
 
-### Method: post
+Before you can use the command line tool, you need to set the `DVCLI_URL` and `DVCLI_TOKEN` environment variables. You can do this by adding the following lines to your `.bashrc` or `.bash_profile` file:
 
-This method sends a POST request to the specified path. It takes a path, an optional map of parameters, and a body as arguments.
+```bash
+export DVCLI_URL="https://dataverse.harvard.edu"
+export DVCLI_TOKEN="your_token_here"
+```
 
-### Method: put
+The command line tool in organized in subcommands. To see a list of available subcommands, run:
 
-This method sends a PUT request to the specified path. It takes a path, an optional map of parameters, and a body as arguments.
+```bash
+./dvcli --help
+```
 
-# File: info.rs
+To see help for a specific subcommand, run:
 
-This file contains a function for getting the version of the API.
+```bash
+./dvcli <subcommand> --help
+```
 
-## Function: get_version
+**Example**
 
-This function retrieves the version of the API. It uses the `get` method of the `BaseClient` to send a GET request to the "api/info/version" endpoint.
+In this examples we will demonstrate how to retrieve the version of the Dataverse instance.
 
-### Parameters
+```bash
+dvcli info version
+```
 
-- `client: &BaseClient`: A reference to the base client used for making HTTP requests.
+The output will be similar to:
 
-### Returns
+```bash
+Dataverse Version: 6.2
+```
 
-- `Result<Response<VersionResponse>, String>`: This function returns a `Result` type. On success, it returns a `Response` with a `VersionResponse` body. On failure, it returns a `String` representing the error.
+### Library Example
 
-### Error Handling
+The library part of this crate refelects all functions that are available in the command line tool. The following example demonstrates how to create a collection.
 
-Errors are handled by returning a `Result` type. If an error occurs, the function will return `Err` with a string representation of the error.
+```rust
+use dataverse::client::DataverseClient;
+use dataverse::native_api
+use dataverse::models::collection
 
-# File: collection.rs
+fn main() {
+    let base_url = std::env::var("DVCLI_URL").unwrap();
+    let token = std::env::var("DVCLI_TOKEN").unwrap();
+    let client = DataverseClient::new(&base_url, &token);
 
-This file contains a function for creating a new collection in a dataverse.
+    // First build the request body
+    let body = collection::CreateBody::new(
+        "name",
+        "alias",
+        "affiliation",
+        "description",
+        collection::DataverseType::RESEARCH_GROUP,
+    )
 
-## Function: create
+    body.add_contact("john@doe.com");
 
-This function creates a new collection in a dataverse.
+    // Alternatively, you can also initialize the body from YAML
+    let body = collection::CreateBody::from_yaml("path/to/file.yaml");
 
-### Parameters
+    // Perform the request
+    let response = native_api::collection::create(&client, &body);
 
-- `client: &BaseClient`: A reference to the base client used for making HTTP requests.
-- `parent: &String`: A reference to the string representing the parent dataverse in which the collection will be created.
-- `body: &CreateBody`: A reference to the body of the request for creating a collection.
-
-### Returns
-
-- `Result<Response<CreateResponse>, String>`: This function returns a `Result` type. On success, it returns a `Response` with a `CreateResponse` body. On failure, it returns a `String` representing the error.
-
-### Error Handling
-
-Errors are handled by returning a `Result` type. If an error occurs, the function will return `Err` with a string representation of the error.
+    match response {
+        Ok(collection) => println!("Collection created: {}", collection.id),
+        Err(e) => eprintln!("Error: {}", e),
+    }
+}
+```
