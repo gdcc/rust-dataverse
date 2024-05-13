@@ -61,14 +61,14 @@ Dataverse Version: 6.2
 The library part of this crate refelects all functions that are available in the command line tool. The following example demonstrates how to create a collection.
 
 ```rust
-use dataverse::client::DataverseClient;
+use dataverse::client::BaseClient;
 use dataverse::native_api
 use dataverse::models::collection
 
 fn main() {
     let base_url = std::env::var("DVCLI_URL").unwrap();
     let token = std::env::var("DVCLI_TOKEN").unwrap();
-    let client = DataverseClient::new(&base_url, &token);
+    let client = BaseClient::new(&base_url, &token);
 
     // First build the request body
     let body = collection::CreateBody::new(
