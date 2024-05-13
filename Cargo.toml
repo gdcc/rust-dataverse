@@ -1,5 +1,5 @@
 [package]
-name = "dvcli"
+name = "dataverse"
 version = "0.1.0"
 edition = "2021"
 
@@ -18,3 +18,7 @@ serde_with = "3.8.1"
 serde_yaml = "0.9.34"
 strum = { version = "0.26.2", features = ["derive"] }
 strum_macros = "0.26.2"
+
+[[bin]]
+name = "dvcli"
+path = "src/main.rs"

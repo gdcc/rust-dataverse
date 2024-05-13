@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use dvcli::{client::BaseClient, native_api::info::get_version, response::Status};
+    use dataverse::{client::BaseClient, native_api::info::get_version, response::Status};
 
     static BASE_URL: &str = "http://localhost:8080";
 

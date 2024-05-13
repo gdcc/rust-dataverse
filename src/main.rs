@@ -1,5 +1,5 @@
 use clap::{Parser, Subcommand};
-use dvcli::cli::{
+use dataverse::cli::{
     base::SubCommandTrait,
     info::{InfoArgs, InfoCommands},
 };
@@ -24,7 +24,7 @@ enum Commands {
 pub fn main() {
     let cli = Cli::parse();
     let (base_url, _) = extract_config_from_env().expect("Missing configuration");
-    let client = dvcli::client::BaseClient::new(&base_url, None).unwrap();
+    let client = dataverse::client::BaseClient::new(&base_url, None).unwrap();
 
     match cli.command {
         Commands::Info(info) => {
