@@ -21,6 +21,9 @@ fn main() {
 
     match matches.subcommand() {
         Some(("info", info_matches)) => info::info_matcher(info_matches, &client),
+        Some(("collection", collection_matches)) => {
+            collection::collection_matcher(collection_matches, &client)
+        }
         _ => {
             println!("No subcommand")
         }
