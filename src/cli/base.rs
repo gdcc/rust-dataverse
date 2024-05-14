@@ -1,14 +1,17 @@
+use std::error::Error;
+use std::fs;
+use std::path::Path;
 use std::str::FromStr;
 
 use crate::response::Response;
 use clap::ArgMatches;
+use serde::de::DeserializeOwned;
 use serde::Serialize;
 
 pub fn evaluate_and_print_response<T: Serialize>(response: Result<Response<T>, String>) {
     match response {
         Ok(response) => {
-            let json = serde_json::to_string_pretty(&response).unwrap();
-            println!("{}", json);
+            response.print_result();
         }
         Err(e) => {
             println!("Error: {}", e);
@@ -30,4 +33,20 @@ where
         .expect(&format!("{} is invalid.", arg_name));
 
     value
+}
+
+pub fn parse_file<P, T>(path: P) -> Result<T, Box<dyn Error>>
+where
+    T: DeserializeOwned,
+    P: AsRef<Path>,
+{
+    let content = fs::read_to_string(path)?;
+
+    if let Ok(content) = serde_json::from_str(&content) {
+        Ok(content)
+    } else if let Ok(content) = serde_yaml::from_str(&content) {
+        Ok(content)
+    } else {
+        Err("Failed to parse the file as either JSON or YAML".into())
+    }
 }
