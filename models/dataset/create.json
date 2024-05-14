@@ -1,0 +1,74 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "type": "object",
+  "properties": {
+    "datasetVersion": {
+      "type": "object",
+      "properties": {
+        "metadataBlocks": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/metadataBlock"
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "metadataBlock": {
+      "type": "object",
+      "properties": {
+        "displayName": {
+          "type": "string"
+        },
+        "fields": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/field"
+          }
+        }
+      }
+    },
+
+    "field": {
+      "type": "object",
+      "properties": {
+        "typeClass": {
+          "type": "string",
+          "enum": ["primitive", "compound"]
+        },
+        "typeName": {
+          "type": "string"
+        },
+        "multiple": {
+          "type": "boolean"
+        },
+        "value": {
+          "oneOf": [
+            { "type": "string" },
+            { "type": "integer" },
+            { "type": "number" },
+            { "$ref": "#/definitions/compound" },
+            {
+              "type": "array",
+              "items": {
+                "oneOf": [
+                  { "type": "string" },
+                  { "type": "integer" },
+                  { "type": "number" },
+                  { "$ref": "#/definitions/compound" }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "compound": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/field"
+      }
+    }
+  }
+}
