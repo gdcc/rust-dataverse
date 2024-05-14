@@ -1,3 +1,6 @@
+use colored::Colorize;
+use colored_json::prelude::*;
+
 #[derive(Debug, serde::Deserialize, serde::Serialize)]
 pub enum Status {
     OK,
@@ -38,13 +41,38 @@ pub struct Response<T> {
     pub requestMethod: Option<String>,
 }
 
-impl<T> Response<T> {
+impl<T> Response<T>
+where
+    T: serde::Serialize,
+{
     pub fn is_ok(&self) -> &Response<T> {
         match self.status {
             Status::ERROR => {
                 panic!("Error: {}", self.message.as_ref().unwrap())
             }
             _ => self,
+        }
+    }
+
+    pub fn print_result(&self) {
+        match self.status {
+            Status::OK => {
+                let json = serde_json::to_string_pretty(&self.data.as_ref().unwrap()).unwrap();
+                println!(
+                    "\n{} - Received the following response: \n",
+                    "Success!".green().bold()
+                );
+                println!("{}\n", json.to_colored_json_auto().unwrap());
+                std::process::exit(exitcode::OK);
+            }
+            Status::ERROR => {
+                println!(
+                    "\n{} {}\n",
+                    "Error:".red().bold(),
+                    self.message.as_ref().unwrap()
+                );
+                std::process::exit(exitcode::DATAERR);
+            }
         }
     }
 }
