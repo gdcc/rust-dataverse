@@ -1,43 +1,33 @@
-use super::base::SubCommandTrait;
-use crate::{client::BaseClient, native_api};
-use clap::{Args, Subcommand};
-use colored::Colorize;
+use crate::client::BaseClient;
+use crate::native_api;
+use clap::{ArgMatches, Command};
 
-#[derive(Debug, Args)]
-#[command(args_conflicts_with_subcommands = true)]
-pub struct InfoArgs {
-    #[command(subcommand)]
-    pub command: Option<InfoCommands>,
+use super::base::evaluate_and_print_response;
+
+// CLI commands
+pub fn info_subcommand() -> Command {
+    Command::new("info")
+        .about("Retrieve information about the Dataverse instance")
+        .arg_required_else_help(true)
+        // Subcommands
+        .subcommand(version_subcommand())
 }
 
-#[derive(Debug, Subcommand)]
-pub enum InfoCommands {
-    #[command(about = "Get the version of the Dataverse instance")]
-    Version,
+fn version_subcommand<'a, 'b>() -> Command {
+    Command::new("version").about("Get the version of the Dataverse instance")
 }
 
-impl SubCommandTrait for InfoCommands {
-    fn process(&self, client: &BaseClient) {
-        match self {
-            InfoCommands::Version => InfoCommands::version(client),
+// Execute the appropriate function based on the subcommand
+pub fn info_matcher(matches: &ArgMatches, client: &BaseClient) {
+    match matches.subcommand() {
+        Some(("version", _)) => get_version(client),
+        _ => {
+            println!("No subcommand");
         }
     }
 }
 
-impl InfoCommands {
-    fn version(client: &BaseClient) {
-        let response = native_api::info::get_version(client);
-
-        match response {
-            Ok(response) => {
-                let (major, minor) = response.data.unwrap().version;
-                println!(
-                    "Dataverse Version: {}.{}",
-                    major.to_string().bold(),
-                    minor.to_string().bold()
-                )
-            }
-            Err(err) => eprintln!("Error: {}", err),
-        }
-    }
+fn get_version(client: &BaseClient) {
+    let response = native_api::info::version::get_version(client);
+    evaluate_and_print_response(response);
 }

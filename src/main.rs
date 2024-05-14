@@ -1,37 +1,28 @@
-use clap::{Parser, Subcommand};
-use dataverse::cli::{
-    base::SubCommandTrait,
-    info::{InfoArgs, InfoCommands},
-};
+use clap::command;
+use dataverse::cli::{collection, info};
+use dataverse::client::BaseClient;
 
-#[derive(Debug, Parser)]
-#[command(name = "DVCLI")]
-#[command(about = "Control Dataverse from your terminal.", long_about = None)]
-pub struct Cli {
-    #[command(subcommand)]
-    command: Commands,
-}
+fn main() {
+    let (base_url, api_token) = extract_config_from_env()
+        .expect("Please set the DVCLI_URL and DVCLI_TOKEN environment variables.");
 
-#[derive(Debug, Subcommand)]
-enum Commands {
-    #[command(
-        arg_required_else_help = true,
-        about = "Get information about the Dataverse instance"
-    )]
-    Info(InfoArgs),
-}
+    let client = BaseClient::new(&base_url, api_token.as_ref()).expect("Failed to create client.");
 
-pub fn main() {
-    let cli = Cli::parse();
-    let (base_url, _) = extract_config_from_env().expect("Missing configuration");
-    let client = dataverse::client::BaseClient::new(&base_url, None).unwrap();
+    let matches = command!()
+        .about("Control Dataverse from your terminal.")
+        .propagate_version(true)
+        .subcommand_required(true)
+        .arg_required_else_help(true)
+        // Subcommands
+        .subcommand(info::info_subcommand())
+        .subcommand(collection::collection_subcommand())
+        //
+        .get_matches();
 
-    match cli.command {
-        Commands::Info(info) => {
-            let info_cmd = info.command.unwrap();
-            match info_cmd {
-                InfoCommands::Version => info_cmd.process(&client),
-            }
+    match matches.subcommand() {
+        Some(("info", info_matches)) => info::info_matcher(info_matches, &client),
+        _ => {
+            println!("No subcommand")
         }
     }
 }
