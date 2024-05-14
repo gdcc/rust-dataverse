@@ -1,4 +1,4 @@
-#[derive(Debug, serde::Deserialize)]
+#[derive(Debug, serde::Deserialize, serde::Serialize)]
 pub enum Status {
     OK,
     ERROR,
@@ -20,17 +20,22 @@ impl Status {
     }
 }
 
-#[derive(Debug, serde::Deserialize)]
+#[derive(Debug, serde::Deserialize, serde::Serialize)]
+#[allow(non_snake_case)]
 pub struct Response<T> {
     pub status: Status,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub data: Option<T>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 
-    #[serde(rename = "requestUrl")]
-    pub request_url: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub requestUrl: Option<String>,
 
-    #[serde(rename = "requestMethod")]
-    pub request_method: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub requestMethod: Option<String>,
 }
 
 impl<T> Response<T> {
