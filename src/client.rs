@@ -10,7 +10,7 @@ pub struct BaseClient {
 }
 
 impl BaseClient {
-    pub fn new(base_url: &str, api_token: Option<&str>) -> Result<Self, reqwest::Error> {
+    pub fn new(base_url: &String, api_token: Option<&String>) -> Result<Self, reqwest::Error> {
         let base_url = Url::parse(base_url).unwrap();
         let client = Client::new();
         Ok(BaseClient {
