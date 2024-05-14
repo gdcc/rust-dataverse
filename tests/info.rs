@@ -1,12 +1,12 @@
 #[cfg(test)]
 mod tests {
-    use dataverse::{client::BaseClient, native_api::info::get_version, response::Status};
+    use dataverse::{client::BaseClient, native_api::info::version::get_version, response::Status};
 
     static BASE_URL: &str = "http://localhost:8080";
 
     #[test]
     fn test_get_version_success() {
-        let client = BaseClient::new(BASE_URL, None).unwrap();
+        let client = BaseClient::new(&BASE_URL.to_string(), None).unwrap();
         let version = get_version(&client).unwrap();
 
         match version.status {
@@ -22,7 +22,7 @@ mod tests {
 
     #[test]
     fn test_get_version_error() {
-        let client = BaseClient::new(BASE_URL, None).unwrap();
+        let client = BaseClient::new(&BASE_URL.to_string(), None).unwrap();
         let version = get_version(&client);
 
         match version {
