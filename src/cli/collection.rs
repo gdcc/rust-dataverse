@@ -3,7 +3,7 @@ use crate::native_api;
 use crate::native_api::collection::create::CollectionCreateBody;
 use clap::{arg, ArgMatches, Command};
 
-use super::base::get_argument;
+use super::base::{get_argument, parse_file};
 
 //
 // CLI commands
@@ -18,7 +18,7 @@ pub fn collection_subcommand() -> Command {
 
 fn create_subcommand<'a, 'b>() -> Command {
     Command::new("create")
-        .about("Create an empty collection")
+        .about("Create a dataverse collection")
         .arg_required_else_help(true)
         .args(&[
             arg!(--parent <NAME> "The parent dataverse alias"),
@@ -31,7 +31,7 @@ fn create_subcommand<'a, 'b>() -> Command {
 //
 pub fn collection_matcher(matches: &ArgMatches, client: &BaseClient) {
     match matches.subcommand() {
-        Some(("create", _)) => create_collection(matches, client),
+        Some(("create", sub_matches)) => create_collection(sub_matches, client),
         _ => {
             println!("No subcommand");
         }
@@ -42,10 +42,11 @@ fn create_collection(matches: &ArgMatches, client: &BaseClient) {
     // Extract the arguments
     let parent = get_argument::<String, String>(matches, "parent");
     let path = get_argument::<String, String>(matches, "file");
+    let path = std::path::Path::new(&path);
 
     // Load the collection metadata from the yaml file
-    let body = std::fs::read_to_string(path).expect("Failed to read the file");
-    let body: CollectionCreateBody = serde_yaml::from_str(&body).expect("Failed to parse the file");
+    let body: CollectionCreateBody =
+        parse_file::<_, CollectionCreateBody>(path).expect("Failed to parse the file");
 
     let response = native_api::collection::create::create_collection(client, &parent, &body);
     super::base::evaluate_and_print_response(response);
