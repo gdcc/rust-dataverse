@@ -1,33 +1,21 @@
 use crate::client::BaseClient;
 use crate::native_api;
-use clap::{ArgMatches, Command};
+use structopt::StructOpt;
 
-use super::base::evaluate_and_print_response;
+use super::base::{evaluate_and_print_response, Matcher};
 
-// CLI commands
-pub fn info_subcommand() -> Command {
-    Command::new("info")
-        .about("Retrieve information about the Dataverse instance")
-        .arg_required_else_help(true)
-        // Subcommands
-        .subcommand(version_subcommand())
+#[derive(StructOpt, Debug)]
+#[structopt(about = "Retrieve information about the Dataverse instance")]
+pub enum InfoSubCommand {
+    Version,
 }
 
-fn version_subcommand<'a, 'b>() -> Command {
-    Command::new("version").about("Get the version of the Dataverse instance")
-}
+impl Matcher for InfoSubCommand {
+    fn process(&self, client: &BaseClient) {
+        let response = match self {
+            InfoSubCommand::Version => native_api::info::version::get_version(client),
+        };
 
-// Execute the appropriate function based on the subcommand
-pub fn info_matcher(matches: &ArgMatches, client: &BaseClient) {
-    match matches.subcommand() {
-        Some(("version", _)) => get_version(client),
-        _ => {
-            println!("No subcommand");
-        }
+        evaluate_and_print_response(response);
     }
-}
-
-fn get_version(client: &BaseClient) {
-    let response = native_api::info::version::get_version(client);
-    evaluate_and_print_response(response);
 }
