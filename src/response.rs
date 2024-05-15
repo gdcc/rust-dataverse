@@ -1,3 +1,4 @@
+use atty::Stream;
 use colored::Colorize;
 use colored_json::prelude::*;
 
@@ -58,11 +59,8 @@ where
         match self.status {
             Status::OK => {
                 let json = serde_json::to_string_pretty(&self.data.as_ref().unwrap()).unwrap();
-                println!(
-                    "\n{} - Received the following response: \n",
-                    "Success!".green().bold()
-                );
-                println!("{}\n", json.to_colored_json_auto().unwrap());
+
+                self.redirect_stream(&json);
                 std::process::exit(exitcode::OK);
             }
             Status::ERROR => {
@@ -73,6 +71,19 @@ where
                 );
                 std::process::exit(exitcode::DATAERR);
             }
+        }
+    }
+
+    fn redirect_stream(&self, json_str: &str) {
+        if atty::is(Stream::Stdout) {
+            println!(
+                "\n{} - Received the following response: \n",
+                "🎉 Success!".green().bold()
+            );
+
+            println!("{}\n", json_str.to_colored_json_auto().unwrap());
+        } else {
+            println!("{}", json_str);
         }
     }
 }
