@@ -16,8 +16,8 @@ mod tests {
 
         assert_eq!(version.data.is_some(), true);
         assert_eq!(version.message.is_none(), true);
-        assert_eq!(version.request_url.is_none(), true);
-        assert_eq!(version.request_method.is_none(), true);
+        assert_eq!(version.requestUrl.is_none(), true);
+        assert_eq!(version.requestUrl.is_none(), true);
     }
 
     #[test]
