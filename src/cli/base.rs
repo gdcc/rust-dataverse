@@ -3,6 +3,7 @@ use std::fs;
 use std::path::Path;
 use std::str::FromStr;
 
+use crate::client::BaseClient;
 use crate::response::Response;
 use clap::ArgMatches;
 use serde::de::DeserializeOwned;
@@ -49,4 +50,9 @@ where
     } else {
         Err("Failed to parse the file as either JSON or YAML".into())
     }
+}
+
+// Trait to define the behavior of a matcher ()
+pub trait Matcher {
+    fn process(&self, client: &BaseClient);
 }
