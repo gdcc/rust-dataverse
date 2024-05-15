@@ -1,43 +1,21 @@
-use super::base::SubCommandTrait;
-use crate::{client::BaseClient, native_api};
-use clap::{Args, Subcommand};
-use colored::Colorize;
+use crate::client::BaseClient;
+use crate::native_api;
+use structopt::StructOpt;
 
-#[derive(Debug, Args)]
-#[command(args_conflicts_with_subcommands = true)]
-pub struct InfoArgs {
-    #[command(subcommand)]
-    pub command: Option<InfoCommands>,
-}
+use super::base::{evaluate_and_print_response, Matcher};
 
-#[derive(Debug, Subcommand)]
-pub enum InfoCommands {
-    #[command(about = "Get the version of the Dataverse instance")]
+#[derive(StructOpt, Debug)]
+#[structopt(about = "Retrieve information about the Dataverse instance")]
+pub enum InfoSubCommand {
     Version,
 }
 
-impl SubCommandTrait for InfoCommands {
+impl Matcher for InfoSubCommand {
     fn process(&self, client: &BaseClient) {
-        match self {
-            InfoCommands::Version => InfoCommands::version(client),
-        }
-    }
-}
+        let response = match self {
+            InfoSubCommand::Version => native_api::info::version::get_version(client),
+        };
 
-impl InfoCommands {
-    fn version(client: &BaseClient) {
-        let response = native_api::info::get_version(client);
-
-        match response {
-            Ok(response) => {
-                let (major, minor) = response.data.unwrap().version;
-                println!(
-                    "Dataverse Version: {}.{}",
-                    major.to_string().bold(),
-                    minor.to_string().bold()
-                )
-            }
-            Err(err) => eprintln!("Error: {}", err),
-        }
+        evaluate_and_print_response(response);
     }
 }

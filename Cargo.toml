@@ -6,18 +6,20 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-ansi_term = "0.12.1"
-clap = { version = "4.5.4", features = ["derive"] }
+clap = { version = "4.5.4", features = ["derive", "cargo"] }
 colored = "2.1.0"
+exitcode = "1.1.2"
 futures-io = "0.3.30"
-human-panic = "2.0.0"
+regress = "0.9.1"
 reqwest = { version = "0.12.4", features = ["blocking", "json"] }
 serde = { version = "1.0.201", features = ["derive"] }
 serde_json = "1.0.117"
 serde_with = "3.8.1"
 serde_yaml = "0.9.34"
-strum = { version = "0.26.2", features = ["derive"] }
-strum_macros = "0.26.2"
+typify = "0.1.0"
+colored_json = "4"
+structopt = "0.3.26"
+atty = "0.2.14"
 
 [[bin]]
 name = "dvcli"
