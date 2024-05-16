@@ -1,6 +1,7 @@
 use dataverse::cli::base::Matcher;
 use dataverse::cli::collection::CollectionSubCommand;
 use dataverse::cli::dataset::DatasetSubCommand;
+use dataverse::cli::file::FileSubCommand;
 use dataverse::cli::info::InfoSubCommand;
 use dataverse::client::BaseClient;
 use structopt::StructOpt;
@@ -11,6 +12,7 @@ enum DVCLI {
     Info(InfoSubCommand),
     Collection(CollectionSubCommand),
     Dataset(DatasetSubCommand),
+    File(FileSubCommand),
 }
 
 fn main() {
@@ -24,6 +26,7 @@ fn main() {
         DVCLI::Info(command) => command.process(&client),
         DVCLI::Collection(command) => command.process(&client),
         DVCLI::Dataset(command) => command.process(&client),
+        DVCLI::File(command) => command.process(&client),
     }
 }
 
