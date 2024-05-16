@@ -25,6 +25,18 @@ impl Status {
 }
 
 #[derive(Debug, serde::Deserialize, serde::Serialize)]
+pub enum Message {
+    PlainMessage(String),
+    NestedMessage(NestedMessage),
+}
+
+#[derive(Debug, serde::Deserialize, serde::Serialize)]
+pub struct NestedMessage {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    message: Option<String>,
+}
+
+#[derive(Debug, serde::Deserialize, serde::Serialize)]
 #[allow(non_snake_case)]
 pub struct Response<T> {
     pub status: Status,
@@ -46,15 +58,6 @@ impl<T> Response<T>
 where
     T: serde::Serialize,
 {
-    pub fn is_ok(&self) -> &Response<T> {
-        match self.status {
-            Status::ERROR => {
-                panic!("Error: {}", self.message.as_ref().unwrap())
-            }
-            _ => self,
-        }
-    }
-
     pub fn print_result(&self) {
         match self.status {
             Status::OK => {
