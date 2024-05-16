@@ -1,7 +1,62 @@
+use colored::Colorize;
+use reqwest::blocking::{multipart, Client, RequestBuilder};
+use reqwest::Url;
+use serde::Deserialize;
 use std::collections::HashMap;
 
-use reqwest::blocking::Client;
-use reqwest::Url;
+use crate::response::Response;
+
+pub enum RequestType {
+    Plain,
+    JSON {
+        body: String,
+    },
+    Multipart {
+        bodies: Option<HashMap<String, String>>,
+        files: Option<HashMap<String, String>>,
+    },
+}
+
+impl RequestType {
+    // Convert the request type to a request
+    pub fn to_request(&self, request: RequestBuilder) -> RequestBuilder {
+        match self {
+            RequestType::Plain => request,
+            RequestType::JSON { body } => Self::build_json_request(body, request),
+            RequestType::Multipart { bodies, files } => {
+                Self::build_form_request(bodies, files, request)
+            }
+        }
+    }
+
+    fn build_json_request(body: &str, request: RequestBuilder) -> RequestBuilder {
+        request
+            .header("Content-Type", "application/json")
+            .body(body.to_owned())
+    }
+
+    fn build_form_request(
+        bodies: &Option<HashMap<String, String>>,
+        files: &Option<HashMap<String, String>>,
+        request: RequestBuilder,
+    ) -> RequestBuilder {
+        let mut form = multipart::Form::new();
+
+        if let Some(bodies) = bodies {
+            for (key, value) in bodies {
+                form = form.part(key.clone(), multipart::Part::text(value.clone()));
+            }
+        }
+
+        if let Some(files) = files {
+            for (key, value) in files {
+                form = form.part(key.clone(), multipart::Part::file(value.clone()).unwrap());
+            }
+        }
+
+        request.multipart(form)
+    }
+}
 
 pub struct BaseClient {
     base_url: Url,
@@ -23,59 +78,57 @@ impl BaseClient {
     pub fn get(
         &self,
         path: &str,
-        parameters: Option<&HashMap<String, String>>,
+        parameters: Option<HashMap<String, String>>,
+        context: &RequestType,
     ) -> Result<reqwest::blocking::Response, reqwest::Error> {
-        self.perform_request(reqwest::Method::GET, path, parameters, None)
+        self.perform_request(reqwest::Method::GET, path, parameters, context)
     }
 
     pub fn post(
         &self,
         path: &str,
-        parameters: Option<&HashMap<String, String>>,
-        body: &str,
+        parameters: Option<HashMap<String, String>>,
+        context: &RequestType,
     ) -> Result<reqwest::blocking::Response, reqwest::Error> {
-        self.perform_request(reqwest::Method::POST, path, parameters, Some(body))
+        self.perform_request(reqwest::Method::POST, path, parameters, context)
     }
 
     pub fn put(
         &self,
         path: &str,
-        parameters: Option<&HashMap<String, String>>,
-        body: &str,
+        parameters: Option<HashMap<String, String>>,
+        context: &RequestType,
     ) -> Result<reqwest::blocking::Response, reqwest::Error> {
-        self.perform_request(reqwest::Method::PUT, path, parameters, Some(body))
+        self.perform_request(reqwest::Method::PUT, path, parameters, context)
     }
 
     pub fn delete(
         &self,
         path: &str,
-        parameters: Option<&HashMap<String, String>>,
+        parameters: Option<HashMap<String, String>>,
+        context: &RequestType,
     ) -> Result<reqwest::blocking::Response, reqwest::Error> {
-        self.perform_request(reqwest::Method::DELETE, path, parameters, None)
+        self.perform_request(reqwest::Method::DELETE, path, parameters, context)
     }
 
     pub fn patch(
         &self,
         path: &str,
-        body: &str,
+        parameters: Option<HashMap<String, String>>,
+        context: &RequestType,
     ) -> Result<reqwest::blocking::Response, reqwest::Error> {
-        self.perform_request(reqwest::Method::PATCH, path, None, Some(body))
+        self.perform_request(reqwest::Method::PATCH, path, parameters, context)
     }
 
     fn perform_request(
         &self,
         method: reqwest::Method,
         path: &str,
-        parameters: Option<&HashMap<String, String>>,
-        body: Option<&str>,
+        parameters: Option<HashMap<String, String>>,
+        context: &RequestType,
     ) -> Result<reqwest::blocking::Response, reqwest::Error> {
         let url = self.base_url.join(path).unwrap();
-        let request = self.client.request(method, url);
-
-        let request = match body {
-            Some(body) => request.body(body.to_owned()),
-            None => request,
-        };
+        let request = context.to_request(self.client.request(method, url));
 
         let request = match parameters {
             Some(parameters) => request.query(&parameters),
@@ -91,4 +144,44 @@ impl BaseClient {
 
         response
     }
+}
+
+// Helper function to evaluate a response
+pub fn evaluate_response<T>(
+    response: Result<reqwest::blocking::Response, reqwest::Error>,
+) -> Result<Response<T>, String>
+where
+    T: for<'de> Deserialize<'de>,
+{
+    // Check if the response is an error
+    let response = match response {
+        Ok(response) => response,
+        Err(err) => {
+            print_error::<T>(err.to_string());
+            panic!();
+        }
+    };
+
+    // Try to read the response into the response struct
+    let raw_content = response.text().unwrap();
+    let json = serde_json::from_str::<Response<T>>(&raw_content);
+
+    return match json {
+        Ok(json) => Ok(json),
+        Err(err) => {
+            print_error::<T>(
+                format!(
+                    "{} - {}",
+                    err.to_string().red().bold(),
+                    raw_content.red().bold(),
+                )
+                .to_string(),
+            );
+            panic!();
+        }
+    };
+}
+
+fn print_error<T>(error: String) {
+    println!("\n{} {}\n", "Error:".red().bold(), error,);
 }
