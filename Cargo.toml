@@ -11,7 +11,7 @@ colored = "2.1.0"
 exitcode = "1.1.2"
 futures-io = "0.3.30"
 regress = "0.9.1"
-reqwest = { version = "0.12.4", features = ["blocking", "json"] }
+reqwest = { version = "0.12.4", features = ["blocking", "json", "multipart"] }
 serde = { version = "1.0.201", features = ["derive"] }
 serde_json = "1.0.117"
 serde_with = "3.8.1"
@@ -20,6 +20,7 @@ typify = "0.1.0"
 colored_json = "4"
 structopt = "0.3.26"
 atty = "0.2.14"
+tokio-util = { version = "0.7.11", features = ["codec"] }
 
 [[bin]]
 name = "dvcli"
