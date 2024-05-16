@@ -11,7 +11,7 @@ mod tests {
 
         match version.status {
             Status::OK => (),
-            Status::ERROR => panic!("Error: {}", version.message.as_ref().unwrap()),
+            Status::ERROR => panic!("Expected a successful version request"),
         }
 
         assert_eq!(version.data.is_some(), true);
@@ -26,7 +26,7 @@ mod tests {
         let version = get_version(&client);
 
         match version {
-            Ok(_) => panic!("Expected an error"),
+            Ok(_) => panic!("Expected an error on version request"),
             Err(_) => (),
         }
     }
