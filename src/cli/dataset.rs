@@ -9,6 +9,7 @@ use super::base::{evaluate_and_print_response, parse_file, Matcher};
 #[derive(StructOpt, Debug)]
 #[structopt(about = "Handle datasets of the Dataverse instance")]
 pub enum DatasetSubCommand {
+    #[structopt(about = "Create a dataset")]
     Create {
         #[structopt(long, help = "Alias of the parent dataverse")]
         parent: String,

@@ -7,6 +7,7 @@ use super::base::{evaluate_and_print_response, Matcher};
 #[derive(StructOpt, Debug)]
 #[structopt(about = "Retrieve information about the Dataverse instance")]
 pub enum InfoSubCommand {
+    #[structopt(about = "Retrieve the version of the Dataverse instance")]
     Version,
 }
 

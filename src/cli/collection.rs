@@ -10,6 +10,7 @@ use super::base::{evaluate_and_print_response, parse_file, Matcher};
 #[derive(StructOpt, Debug)]
 #[structopt(about = "Handle collections of a Dataverse instance")]
 pub enum CollectionSubCommand {
+    #[structopt(about = "Create a collection")]
     Create {
         #[structopt(long, help = "Alias of the parent dataverse")]
         parent: String,
@@ -17,6 +18,8 @@ pub enum CollectionSubCommand {
         #[structopt(long, help = "Path to the JSON file containing the collection body")]
         path: PathBuf,
     },
+
+    #[structopt(about = "Publish a collection")]
     Publish {
         #[structopt(long, help = "Alias of the collection")]
         alias: String,
