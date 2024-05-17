@@ -1,0 +1,7 @@
+{
+  "description": "My description.",
+  "directoryLabel": "data/subdir1",
+  "categories": ["Data"],
+  "restrict": false,
+  "tabIngest": false
+}
