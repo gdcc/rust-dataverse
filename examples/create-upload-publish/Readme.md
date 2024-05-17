@@ -44,7 +44,7 @@ dvcli collection create \
     >> collection_output.json
 ```
 
-```
+```bash
 🎉 Success! - Received the following response:
 
 {
