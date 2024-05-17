@@ -49,13 +49,13 @@ export DVCLI_TOKEN="your_token_here"
 The command line tool in organized in subcommands. To see a list of available subcommands, run:
 
 ```bash
-./dvcli --help
+dvcli --help
 ```
 
 To see help for a specific subcommand, run:
 
 ```bash
-./dvcli <subcommand> --help
+dvcli <subcommand> --help
 ```
 
 **Example**
