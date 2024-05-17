@@ -5,18 +5,18 @@ This is a Rust client for the Dataverse API and includes a command line interfac
 Current features include:
 
 * Collection
-  * Create
-  * Delete
-  * Publish
+  * `create`
+  * `delete`
+  * `publish`
 * Info
-  * Version
+  * `version`
 * Dataset
-  * Create
-  * Delete
-  * Publish
+  * `create`
+  * `delete`
+  * `publish`
 * File
-  * Upload
-  * Replace
+  * `upload`
+  * `replace`
 
 ## Installation
 
@@ -77,3 +77,15 @@ Dataverse Version: 6.2
 We have provided an example in the `examples` directory. These examples demonstrate how to use the client to perform various operations.
 
 * [`examples/create-upload-publish`](examples/create-upload-publish) - Demonstrates how to create a collection, dataset, upload a file, and publish the collection and dataset.
+
+## ToDo's
+
+- [] Implement remaining API endpoints
+- [] Write unit and integration tests
+- [] Asynchronous support using `tokio`
+- [] Synchronize feature to watch for changes locally and remotely
+- [] Local storage of credentials using `keyring` crate
+- [] Python bindings using `PyO3`
+- [] Documentation
+- [] Publish on crates.io
+- [] Continuous integration
