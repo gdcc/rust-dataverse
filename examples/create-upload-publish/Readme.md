@@ -28,7 +28,7 @@ export DVCLI_TOKEN="<API_TOKEN>"
 
 ## Steps
 
-1. Create a new collection in Dataverse instance
+### 1. Create a new collection in Dataverse instance
 
 This command creates a new collection in the Dataverse instance with the metadata provided in the `collection.json` file. As demonstrated below, you can also save the JSON output to a file for further processing. This will only save the JSON response and strip all the other fancy messages.
 
@@ -66,7 +66,7 @@ dvcli collection create \
 }
 ```
 
-2. Create a new dataset in the collection
+### 2. Create a new dataset in the collection
 
 This command creates a new dataset in the collection `dvcli` with the metadata provided in the `dataset.json` file.
 
@@ -84,7 +84,7 @@ dvcli dataset create --collection dvcli --body dataset.json \
 }
 ```
 
-3. Upload a file to the dataset
+### 3. Upload a file to the dataset
 
 This command uploads the file `data.csv` to the dataset created in the previous step. Keep in mind, that re-running this command will not overwrite the existing file, but will attach a `-[digit]` to the filename.
 
@@ -116,7 +116,7 @@ dvcli file upload files/data.csv --pid $persistent_id --body file.json
 }
 ```
 
-4. Publish the collection and dataset
+### 4. Publish the collection and dataset
 
 These commands publish the collection and dataset, making them publicly accessible.
 
