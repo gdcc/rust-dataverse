@@ -1,5 +1,6 @@
 pub mod client;
 pub mod identifier;
+pub mod progressbar;
 pub mod response;
 
 pub mod native_api {

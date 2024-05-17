@@ -1,9 +1,11 @@
 use colored::Colorize;
+use indicatif::MultiProgress;
 use reqwest::blocking::{multipart, Client, RequestBuilder};
 use reqwest::Url;
 use serde::Deserialize;
 use std::collections::HashMap;
 
+use crate::progressbar::wrap_progressbar;
 use crate::response::Response;
 
 pub enum RequestType {
@@ -50,7 +52,11 @@ impl RequestType {
 
         if let Some(files) = files {
             for (key, value) in files {
-                form = form.part(key.clone(), multipart::Part::file(value.clone()).unwrap());
+                let multi_pb = MultiProgress::new();
+                let part = wrap_progressbar(value, &multi_pb)
+                    .expect("The progress bar could not be created. Please check the file path.");
+
+                form = form.part(key.clone(), part);
             }
         }
 
