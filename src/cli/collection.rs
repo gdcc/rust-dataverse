@@ -1,5 +1,6 @@
 use crate::client::BaseClient;
 use crate::native_api::collection::create::{self, CollectionCreateBody};
+use crate::native_api::collection::delete;
 use crate::native_api::collection::publish;
 use std::path::PathBuf;
 use structopt::StructOpt;
@@ -24,7 +25,13 @@ pub enum CollectionSubCommand {
 
     #[structopt(about = "Publish a collection")]
     Publish {
-        #[structopt(long, help = "Alias of the collection")]
+        #[structopt(help = "Alias of the collection to publish")]
+        alias: String,
+    },
+
+    #[structopt(about = "Delete a collection")]
+    Delete {
+        #[structopt(help = "Alias of the collection to delete")]
         alias: String,
     },
 }
@@ -40,6 +47,10 @@ impl Matcher for CollectionSubCommand {
             }
             CollectionSubCommand::Publish { alias } => {
                 let response = publish::publish_collection(client, &alias);
+                evaluate_and_print_response(response);
+            }
+            CollectionSubCommand::Delete { alias } => {
+                let response = delete::delete_collection(client, &alias);
                 evaluate_and_print_response(response);
             }
         };
