@@ -22,6 +22,7 @@ structopt = "0.3.26"
 atty = "0.2.14"
 keyring = "2.3.3"
 toml = "0.8.13"
+indicatif = "0.17.8"
 
 [[bin]]
 name = "dvcli"
