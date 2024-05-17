@@ -49,13 +49,13 @@ export DVCLI_TOKEN="your_token_here"
 The command line tool in organized in subcommands. To see a list of available subcommands, run:
 
 ```bash
-./dvcli --help
+dvcli --help
 ```
 
 To see help for a specific subcommand, run:
 
 ```bash
-./dvcli <subcommand> --help
+dvcli <subcommand> --help
 ```
 
 **Example**
@@ -80,12 +80,12 @@ We have provided an example in the `examples` directory. These examples demonstr
 
 ## ToDo's
 
-- [] Implement remaining API endpoints
-- [] Write unit and integration tests
-- [] Asynchronous support using `tokio`
-- [] Synchronize feature to watch for changes locally and remotely
-- [] Local storage of credentials using `keyring` crate
-- [] Python bindings using `PyO3`
-- [] Documentation
-- [] Publish on crates.io
-- [] Continuous integration
+- [ ] Implement remaining API endpoints
+- [ ] Write unit and integration tests
+- [ ] Asynchronous support using `tokio`
+- [ ] Synchronize feature to watch for changes locally and remotely
+- [ ] Local storage of credentials using `keyring` crate
+- [ ] Python bindings using `PyO3`
+- [ ] Documentation
+- [ ] Publish on crates.io
+- [ ] Continuous integration

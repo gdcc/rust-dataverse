@@ -38,10 +38,7 @@ dvcli collection create --parent Root --body collection.json
 
 # You can also save the JSON output
 # to a file (which is useful for further processing)
-dvcli collection create \
-    --parent Root \
-    --body collection.json \
-    >> collection_output.json
+dvcli collection create --parent Root --body collection.json >> collection_output.json
 ```
 
 ```bash
