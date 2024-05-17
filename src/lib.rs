@@ -5,6 +5,7 @@ pub mod response;
 pub mod native_api {
     pub mod collection {
         pub mod create;
+        pub mod delete;
         pub mod publish;
     }
     pub mod info {
@@ -12,6 +13,8 @@ pub mod native_api {
     }
     pub mod dataset {
         pub mod create;
+        pub mod delete;
+        pub mod publish;
     }
     pub mod file {
         pub mod replace;
