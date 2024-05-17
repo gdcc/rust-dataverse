@@ -20,6 +20,8 @@ typify = "0.1.0"
 colored_json = "4"
 structopt = "0.3.26"
 atty = "0.2.14"
+keyring = "2.3.3"
+toml = "0.8.13"
 
 [[bin]]
 name = "dvcli"
