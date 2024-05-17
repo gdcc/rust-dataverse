@@ -16,9 +16,8 @@ pub fn replace_file(
     // Endpoint metadata
     let path = format!("api/files/{}/replace", id);
 
-    // Build hash maps for the request
+    // Build hash maps and body for the request
     let file = HashMap::from([("file".to_string(), fpath.clone())]);
-
     let body = match body {
         Some(body) => Some(HashMap::from([(
             "jsonData".to_string(),
@@ -27,7 +26,7 @@ pub fn replace_file(
         None => None,
     };
 
-    // Build the request context
+    // Send request
     let context = RequestType::Multipart {
         bodies: body,
         files: Some(file),
