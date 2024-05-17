@@ -2,7 +2,7 @@
 
 This workflow example demonstrates how to use DVCLI to perform the following operations:
 
-* Create a new collection in Dataverse instance
+* Create a new collection in a Dataverse instance
 * Create a new dataset in the collection
 * Upload a file to the dataset
 * Publish the collection and dataset
