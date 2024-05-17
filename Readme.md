@@ -1,13 +1,29 @@
 # Dataverse Rust
 
-This is a Rust client for the Dataverse API. It is a work in progress and is not yet feature complete.
+This is a Rust client for the Dataverse API and includes a command line interface. It is a work in progress and is not yet feature complete.
+
+Current features include:
+
+* Collection
+  * Create
+  * Delete
+  * Publish
+* Info
+  * Version
+* Dataset
+  * Create
+  * Delete
+  * Publish
+* File
+  * Upload
+  * Replace
 
 ## Installation
 
 **Command line**
 
 ```bash
-cargo build --bin dvcli --release
+cargo install --path .
 ```
 
 **Cargo.toml**
@@ -56,40 +72,8 @@ The output will be similar to:
 Dataverse Version: 6.2
 ```
 
-### Library Example
+## Examples
 
-The library part of this crate refelects all functions that are available in the command line tool. The following example demonstrates how to create a collection.
+We have provided an example in the `examples` directory. These examples demonstrate how to use the client to perform various operations.
 
-```rust
-use dataverse::client::BaseClient;
-use dataverse::native_api
-use dataverse::models::collection
-
-fn main() {
-    let base_url = std::env::var("DVCLI_URL").unwrap();
-    let token = std::env::var("DVCLI_TOKEN").unwrap();
-    let client = BaseClient::new(&base_url, &token);
-
-    // First build the request body
-    let body = collection::CreateBody::new(
-        "name",
-        "alias",
-        "affiliation",
-        "description",
-        collection::DataverseType::RESEARCH_GROUP,
-    )
-
-    body.add_contact("john@doe.com");
-
-    // Alternatively, you can also initialize the body from YAML
-    let body = collection::CreateBody::from_yaml("path/to/file.yaml");
-
-    // Perform the request
-    let response = native_api::collection::create(&client, &body);
-
-    match response {
-        Ok(collection) => println!("Collection created: {}", collection.id),
-        Err(e) => eprintln!("Error: {}", e),
-    }
-}
-```
+* [`examples/create-upload-publish`](examples/create-upload-publish) - Demonstrates how to create a collection, dataset, upload a file, and publish the collection and dataset.
