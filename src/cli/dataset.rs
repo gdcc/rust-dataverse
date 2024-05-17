@@ -11,20 +11,24 @@ use super::base::{evaluate_and_print_response, parse_file, Matcher};
 pub enum DatasetSubCommand {
     #[structopt(about = "Create a dataset")]
     Create {
-        #[structopt(long, help = "Alias of the parent dataverse")]
+        #[structopt(long, short, help = "Alias of the parent dataverse")]
         parent: String,
 
-        #[structopt(long, help = "Path to the JSON file containing the dataset body")]
-        path: PathBuf,
+        #[structopt(
+            long,
+            short,
+            help = "Path to the JSON/YAML file containing the dataset body"
+        )]
+        body: PathBuf,
     },
 }
 
 impl Matcher for DatasetSubCommand {
     fn process(&self, client: &BaseClient) {
         match self {
-            DatasetSubCommand::Create { parent, path } => {
+            DatasetSubCommand::Create { parent, body } => {
                 let body: DatasetCreateBody =
-                    parse_file::<_, DatasetCreateBody>(path).expect("Failed to parse the file");
+                    parse_file::<_, DatasetCreateBody>(body).expect("Failed to parse the file");
                 let response = create::create_collection(client, &parent, &body);
                 evaluate_and_print_response(response);
             }

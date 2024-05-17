@@ -1,8 +1,7 @@
-use std::path::PathBuf;
-
 use crate::client::BaseClient;
 use crate::native_api::collection::create::{self, CollectionCreateBody};
 use crate::native_api::collection::publish;
+use std::path::PathBuf;
 use structopt::StructOpt;
 
 use super::base::{evaluate_and_print_response, parse_file, Matcher};
@@ -12,11 +11,15 @@ use super::base::{evaluate_and_print_response, parse_file, Matcher};
 pub enum CollectionSubCommand {
     #[structopt(about = "Create a collection")]
     Create {
-        #[structopt(long, help = "Alias of the parent dataverse")]
+        #[structopt(long, short, help = "Alias of the parent dataverse")]
         parent: String,
 
-        #[structopt(long, help = "Path to the JSON file containing the collection body")]
-        path: PathBuf,
+        #[structopt(
+            long,
+            short,
+            help = "Path to the JSON/YAML file containing the collection body"
+        )]
+        body: PathBuf,
     },
 
     #[structopt(about = "Publish a collection")]
@@ -29,9 +32,9 @@ pub enum CollectionSubCommand {
 impl Matcher for CollectionSubCommand {
     fn process(&self, client: &BaseClient) {
         match self {
-            CollectionSubCommand::Create { parent, path } => {
+            CollectionSubCommand::Create { parent, body } => {
                 let body: CollectionCreateBody =
-                    parse_file::<_, CollectionCreateBody>(path).expect("Failed to parse the file");
+                    parse_file::<_, CollectionCreateBody>(body).expect("Failed to parse the file");
                 let response = create::create_collection(client, &parent, &body);
                 evaluate_and_print_response(response);
             }

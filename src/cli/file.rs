@@ -31,7 +31,7 @@ pub enum FileSubCommand {
         )]
         id: Option<String>,
 
-        #[structopt(long, help = "Path to the JSON file containing the file body")]
+        #[structopt(long, help = "Path to the JSON/YAML file containing the file body")]
         body: Option<PathBuf>,
     },
 
@@ -43,7 +43,11 @@ pub enum FileSubCommand {
         #[structopt(long, short, help = "Identifier of the of the file to replace")]
         id: String,
 
-        #[structopt(long, short, help = "Path to the JSON file containing the file body")]
+        #[structopt(
+            long,
+            short,
+            help = "Path to the JSON/YAML file containing the file body"
+        )]
         body: PathBuf,
 
         #[structopt(long, short, help = "Force the replacement of the file")]
