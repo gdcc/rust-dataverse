@@ -10,7 +10,7 @@ use crate::native_api::file::upload::UploadBody;
 use super::base::{evaluate_and_print_response, parse_file, Matcher};
 
 #[derive(StructOpt, Debug)]
-#[structopt(about = "Handle collections of a Dataverse instance")]
+#[structopt(about = "Handle files of a Dataverse instance")]
 pub enum FileSubCommand {
     #[structopt(about = "Upload a file")]
     Upload {
