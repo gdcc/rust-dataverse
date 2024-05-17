@@ -71,8 +71,7 @@ dvcli collection create \
 This command creates a new dataset in the collection `dvcli` with the metadata provided in the `dataset.json` file.
 
 ```bash
-dvcli dataset create --collection dvcli --body dataset.json \
-    >> dataset_output.json
+dvcli dataset create --collection dvcli --body dataset.json >> dataset_output.json
 ```
 
 ```bash
