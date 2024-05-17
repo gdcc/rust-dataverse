@@ -25,18 +25,6 @@ impl Status {
 }
 
 #[derive(Debug, serde::Deserialize, serde::Serialize)]
-pub enum Message {
-    PlainMessage(String),
-    NestedMessage(NestedMessage),
-}
-
-#[derive(Debug, serde::Deserialize, serde::Serialize)]
-pub struct NestedMessage {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    message: Option<String>,
-}
-
-#[derive(Debug, serde::Deserialize, serde::Serialize)]
 #[allow(non_snake_case)]
 pub struct Response<T> {
     pub status: Status,
@@ -45,7 +33,7 @@ pub struct Response<T> {
     pub data: Option<T>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
+    pub message: Option<Message>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub requestUrl: Option<String>,
@@ -89,4 +77,28 @@ where
             println!("{}", json_str);
         }
     }
+}
+
+#[derive(Debug, serde::Deserialize, serde::Serialize)]
+#[serde(untagged)]
+pub enum Message {
+    PlainMessage(String),
+    NestedMessage(NestedMessage),
+}
+
+impl std::fmt::Display for Message {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            Message::PlainMessage(message) => write!(f, "{}", message),
+            Message::NestedMessage(nested_message) => {
+                write!(f, "{}", nested_message.message.as_ref().unwrap())
+            }
+        }
+    }
+}
+
+#[derive(Debug, serde::Deserialize, serde::Serialize)]
+pub struct NestedMessage {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    message: Option<String>,
 }
