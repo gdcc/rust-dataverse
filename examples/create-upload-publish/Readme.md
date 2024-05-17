@@ -121,7 +121,7 @@ These commands publish the collection and dataset, making them publicly accessib
 
 ```bash
 dvcli collection publish dvcli
-dvcil dataset publish --version major $persistent_id
+dvcli dataset publish --version major $persistent_id
 ```
 
 ```bash
