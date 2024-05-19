@@ -11,10 +11,14 @@ Current features include:
 * Info
   * `version`
 * Dataset
+  * `get`
   * `create`
+  * `edit`
   * `delete`
   * `publish`
 * File
+  * `metadata`
+  * `download`
   * `upload`
   * `replace`
 
