@@ -1,3 +1,4 @@
+use colored::Colorize;
 use dataverse::cli::base::Matcher;
 use dataverse::cli::collection::CollectionSubCommand;
 use dataverse::cli::dataset::DatasetSubCommand;
@@ -5,6 +6,10 @@ use dataverse::cli::file::FileSubCommand;
 use dataverse::cli::info::InfoSubCommand;
 use dataverse::client::BaseClient;
 use structopt::StructOpt;
+
+static HEADER: &str = r#"
+--- Dataverse Command Line Interface (DVCLI) ---
+"#;
 
 #[derive(StructOpt, Debug)]
 #[structopt(about = "CLI to interact with Dataverse")]
@@ -21,6 +26,10 @@ fn main() {
 
     let client = BaseClient::new(&base_url, api_token.as_ref()).expect("Failed to create client.");
     let dvcli = DVCLI::from_args();
+
+    if atty::is(atty::Stream::Stdout) {
+        println!("{}", HEADER.bold());
+    }
 
     match dvcli {
         DVCLI::Info(command) => command.process(&client),
