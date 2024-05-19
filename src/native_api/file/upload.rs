@@ -21,7 +21,7 @@ pub fn upload_file(
     // Endpoint metadata
     let path = match id {
         Identifier::PeristentId(_) => "api/datasets/:persistentId/add".to_string(),
-        Identifier::Id(id) => format!("api/datasets/{}/add", id.as_str()),
+        Identifier::Id(id) => format!("api/datasets/{}/add", id),
     };
 
     // Build hash maps for the request
@@ -47,7 +47,7 @@ pub fn upload_file(
             Some(HashMap::from([("persistentId".to_string(), id.clone())])),
             &context,
         ),
-        Identifier::Id(id) => client.post(&format!("api/files/{}", id.as_str()), None, &context),
+        Identifier::Id(id) => client.post(&format!("api/files/{}", id), None, &context),
     };
 
     evaluate_response::<UploadResponse>(response)

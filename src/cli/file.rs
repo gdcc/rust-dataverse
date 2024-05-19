@@ -19,17 +19,11 @@ pub enum FileSubCommand {
 
         #[structopt(
             long,
-            help = "Persistent identifier of the dataset to upload the file to",
-            conflicts_with = "id"
-        )]
-        pid: Option<String>,
-
-        #[structopt(
-            long,
-            help = "Identifier of the dataset to upload the file to",
+            short,
+            help = "(Peristent) Identifier of the dataset to upload the file to",
             conflicts_with = "pid"
         )]
-        id: Option<String>,
+        id: Identifier,
 
         #[structopt(long, help = "Path to the JSON/YAML file containing the file body")]
         body: Option<PathBuf>,
@@ -58,13 +52,7 @@ pub enum FileSubCommand {
 impl Matcher for FileSubCommand {
     fn process(&self, client: &BaseClient) {
         match self {
-            FileSubCommand::Upload {
-                pid,
-                id,
-                path,
-                body,
-            } => {
-                let id = Identifier::from_pid_or_id(pid, id);
+            FileSubCommand::Upload { id, path, body } => {
                 let body = prepare_body(body);
                 let response =
                     upload::upload_file(client, &id, &path.to_str().unwrap().to_string(), &body);
