@@ -1,3 +1,4 @@
+use atty::Stream;
 use colored::Colorize;
 use indicatif::MultiProgress;
 use reqwest::blocking::{multipart, Client, RequestBuilder};
@@ -134,12 +135,14 @@ impl BaseClient {
         context: &RequestType,
     ) -> Result<reqwest::blocking::Response, reqwest::Error> {
         let url = self.base_url.join(path).unwrap();
-        let request = context.to_request(self.client.request(method, url));
+        let request = context.to_request(self.client.request(method, url.clone()));
 
         let request = match parameters {
             Some(parameters) => request.query(&parameters),
             None => request,
         };
+
+        print_call(url.to_string());
 
         let request = match &self.api_token {
             Some(api_token) => request.header("X-Dataverse-key", api_token),
@@ -190,4 +193,14 @@ where
 
 fn print_error<T>(error: String) {
     println!("\n{} {}\n", "Error:".red().bold(), error,);
+}
+
+fn print_call(url: String) {
+    if atty::is(Stream::Stdout) {
+        println!(
+            "\n{}: {}",
+            "Calling".to_string().blue().bold(),
+            url.to_string()
+        );
+    }
 }
