@@ -15,6 +15,8 @@ pub mod native_api {
     pub mod dataset {
         pub mod create;
         pub mod delete;
+        pub mod edit;
+        pub mod get;
         pub mod publish;
     }
     pub mod file {
