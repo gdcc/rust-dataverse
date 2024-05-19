@@ -1,10 +1,9 @@
-use serde::{Deserialize, Serialize};
-use typify::import_types;
-
 use crate::{
     client::{evaluate_response, BaseClient, RequestType},
     response::Response,
 };
+use serde::{Deserialize, Serialize};
+use typify::import_types;
 
 import_types!(schema = "models/dataset/delete.json");
 

@@ -67,16 +67,20 @@ where
 
     fn redirect_stream(&self, json_str: &str) {
         if atty::is(Stream::Stdout) {
-            println!(
-                "\n{} - Received the following response: \n",
-                "🎉 Success!".green().bold()
-            );
-
+            println!("{}", success_message());
             println!("{}\n", json_str.to_colored_json_auto().unwrap());
         } else {
             println!("{}", json_str);
         }
     }
+}
+
+fn success_message() -> String {
+    format!(
+        "{} {} - Received the following response: \n",
+        "└── ".bold(),
+        "🎉 Success!".green().bold()
+    )
 }
 
 #[derive(Debug, serde::Deserialize, serde::Serialize)]
