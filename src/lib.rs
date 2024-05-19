@@ -2,6 +2,7 @@ pub mod client;
 pub mod identifier;
 pub mod progressbar;
 pub mod response;
+pub mod utils;
 
 pub mod native_api {
     pub mod collection {
@@ -17,6 +18,7 @@ pub mod native_api {
         pub mod delete;
         pub mod edit;
         pub mod get;
+        pub mod link;
         pub mod publish;
     }
     pub mod file {
