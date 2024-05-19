@@ -16,8 +16,8 @@ Current features include:
   * `edit`
   * `delete`
   * `publish`
+  * `link`
 * File
-  * `metadata`
   * `download`
   * `upload`
   * `replace`
@@ -87,9 +87,9 @@ We have provided an example in the `examples` directory. These examples demonstr
 - [ ] Implement remaining API endpoints
 - [ ] Write unit and integration tests
 - [ ] Asynchronous support using `tokio`
-- [ ] Synchronize feature to watch for changes locally and remotely
 - [ ] Local storage of credentials using `keyring` crate
 - [ ] Python bindings using `PyO3`
 - [ ] Documentation
 - [ ] Publish on crates.io
 - [ ] Continuous integration
+- [ ] Validate before upload using `/api/dataverses/$ID/validateDatasetJson`
