@@ -198,7 +198,7 @@ fn print_error<T>(error: String) {
 fn print_call(url: String) {
     if atty::is(Stream::Stdout) {
         println!(
-            "\n{}: {}",
+            "{}: {}",
             "Calling".to_string().blue().bold(),
             url.to_string()
         );
