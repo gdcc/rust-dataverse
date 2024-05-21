@@ -1,6 +1,7 @@
 pub mod client;
 pub mod identifier;
 pub mod progressbar;
+pub mod request;
 pub mod response;
 pub mod utils;
 
@@ -20,10 +21,10 @@ pub mod native_api {
         pub mod get;
         pub mod link;
         pub mod publish;
+        pub mod upload;
     }
     pub mod file {
         pub mod replace;
-        pub mod upload;
     }
 }
 
