@@ -5,14 +5,15 @@ use serde_json;
 use typify::import_types;
 
 use crate::{
-    client::{evaluate_response, BaseClient, RequestType},
+    client::{evaluate_response, BaseClient},
     identifier::Identifier,
+    request::RequestType,
     response::Response,
 };
 
 import_types!(schema = "models/file/filemeta.json");
 
-pub fn upload_file(
+pub fn upload_file_to_dataset(
     client: &BaseClient,
     id: &Identifier,
     fpath: &String,

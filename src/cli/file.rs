@@ -1,34 +1,14 @@
 use std::path::PathBuf;
 use structopt::StructOpt;
 
-use crate::client::BaseClient;
-use crate::identifier::Identifier;
 use crate::native_api::file::replace;
-use crate::native_api::file::upload;
-use crate::native_api::file::upload::UploadBody;
+use crate::{client::BaseClient, native_api::dataset::upload::UploadBody};
 
 use super::base::{evaluate_and_print_response, parse_file, Matcher};
 
 #[derive(StructOpt, Debug)]
 #[structopt(about = "Handle files of a Dataverse instance")]
 pub enum FileSubCommand {
-    #[structopt(about = "Upload a file")]
-    Upload {
-        #[structopt(help = "Path to the file to upload")]
-        path: PathBuf,
-
-        #[structopt(
-            long,
-            short,
-            help = "(Peristent) Identifier of the dataset to upload the file to",
-            conflicts_with = "pid"
-        )]
-        id: Identifier,
-
-        #[structopt(long, help = "Path to the JSON/YAML file containing the file body")]
-        body: Option<PathBuf>,
-    },
-
     #[structopt(about = "Replace a file")]
     Replace {
         #[structopt(help = "Path to the file to replace")]
@@ -42,7 +22,7 @@ pub enum FileSubCommand {
             short,
             help = "Path to the JSON/YAML file containing the file body"
         )]
-        body: PathBuf,
+        body: Option<PathBuf>,
 
         #[structopt(long, short, help = "Force the replacement of the file")]
         force: bool,
@@ -52,31 +32,15 @@ pub enum FileSubCommand {
 impl Matcher for FileSubCommand {
     fn process(&self, client: &BaseClient) {
         match self {
-            FileSubCommand::Upload { id, path, body } => {
-                let body = prepare_body(body);
-                let response =
-                    upload::upload_file(client, &id, &path.to_str().unwrap().to_string(), &body);
-
-                evaluate_and_print_response(response);
-            }
             FileSubCommand::Replace {
                 id,
                 path,
                 body,
                 force,
             } => {
-                let mut body = prepare_body(&Some(body.to_owned())).unwrap();
-
-                if body.force_replace.is_none() {
-                    body.force_replace = Some(*force);
-                }
-
-                let response = replace::replace_file(
-                    client,
-                    id,
-                    &path.to_str().unwrap().to_string(),
-                    &Some(body),
-                );
+                let body = prepare_replace_body(body, force);
+                let response =
+                    replace::replace_file(client, id, &path.to_str().unwrap().to_string(), &body);
 
                 evaluate_and_print_response(response);
             }
@@ -84,10 +48,14 @@ impl Matcher for FileSubCommand {
     }
 }
 
-fn prepare_body(body: &Option<PathBuf>) -> Option<UploadBody> {
+fn prepare_replace_body(body: &Option<PathBuf>, force: &bool) -> Option<UploadBody> {
     match body {
         Some(body) => {
-            Some(parse_file::<_, UploadBody>(body).expect("Unable to pase the metadata file."))
+            let mut body = parse_file::<_, UploadBody>(body).unwrap();
+            if body.force_replace.is_none() {
+                body.force_replace = Some(force.to_owned());
+            }
+            Some(body)
         }
         _ => None,
     }
