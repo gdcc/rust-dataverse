@@ -8,6 +8,16 @@ pub enum Status {
     ERROR,
 }
 
+impl PartialEq for Status {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Status::OK, Status::OK) => true,
+            (Status::ERROR, Status::ERROR) => true,
+            _ => false,
+        }
+    }
+}
+
 impl Status {
     pub fn as_str(&self) -> &str {
         match self {
