@@ -1,8 +1,9 @@
 use std::collections::HashMap;
 
 use crate::{
-    client::{evaluate_response, BaseClient, RequestType},
-    native_api::file::upload::{UploadBody, UploadResponse},
+    client::{evaluate_response, BaseClient},
+    native_api::dataset::upload::{UploadBody, UploadResponse},
+    request::RequestType,
     response::Response,
 };
 use serde_json;

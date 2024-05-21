@@ -1,7 +1,8 @@
 use crate::{
-    client::{evaluate_response, BaseClient, RequestType},
+    client::{evaluate_response, BaseClient},
     identifier::Identifier,
     native_api::dataset::edit::GetDatasetResponse,
+    request::RequestType,
     response::Response,
 };
 

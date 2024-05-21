@@ -1,6 +1,7 @@
 use crate::{
-    client::{evaluate_response, BaseClient, RequestType},
+    client::{evaluate_response, BaseClient},
     identifier::Identifier,
+    request::RequestType,
     response::Response,
     utils::get_dataset_id,
 };

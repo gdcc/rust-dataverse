@@ -1,5 +1,6 @@
 use crate::{
-    client::{evaluate_response, BaseClient, RequestType},
+    client::{evaluate_response, BaseClient},
+    request::RequestType,
     response::Response,
 };
 use serde::{Deserialize, Serialize};
@@ -9,7 +10,7 @@ import_types!(schema = "models/dataset/delete.json");
 
 pub fn delete_dataset(
     client: &BaseClient,
-    id: &u32,
+    id: &i64,
 ) -> Result<Response<UnpublishedDatasetDeleteResponse>, String> {
     // Endpoint metadata
     let url = format!("/api/datasets/{}", id.to_string());

@@ -2,7 +2,8 @@ use serde::{Deserialize, Serialize};
 use typify::import_types;
 
 use crate::{
-    client::{evaluate_response, BaseClient, RequestType},
+    client::{evaluate_response, BaseClient},
+    request::RequestType,
     response::Response,
 };
 
