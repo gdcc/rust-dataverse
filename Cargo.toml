@@ -23,7 +23,13 @@ atty = "0.2.14"
 keyring = "2.3.3"
 toml = "0.8.13"
 indicatif = "0.17.8"
+jwalk = "0.8.1"
 
 [[bin]]
 name = "dvcli"
 path = "src/main.rs"
+
+[dev-dependencies]
+httpmock = "0.7.0"
+lazy_static = "1.4.0"
+tempfile = "3.10.1"
