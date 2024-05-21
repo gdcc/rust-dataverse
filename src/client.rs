@@ -1,69 +1,11 @@
+use crate::request::RequestType;
+use crate::response::Response;
 use atty::Stream;
 use colored::Colorize;
-use indicatif::MultiProgress;
-use reqwest::blocking::{multipart, Client, RequestBuilder};
+use reqwest::blocking::Client;
 use reqwest::Url;
 use serde::Deserialize;
 use std::collections::HashMap;
-
-use crate::progressbar::wrap_progressbar;
-use crate::response::Response;
-
-pub enum RequestType {
-    Plain,
-    JSON {
-        body: String,
-    },
-    Multipart {
-        bodies: Option<HashMap<String, String>>,
-        files: Option<HashMap<String, String>>,
-    },
-}
-
-impl RequestType {
-    // Convert the request type to a request
-    pub fn to_request(&self, request: RequestBuilder) -> RequestBuilder {
-        match self {
-            RequestType::Plain => request,
-            RequestType::JSON { body } => Self::build_json_request(body, request),
-            RequestType::Multipart { bodies, files } => {
-                Self::build_form_request(bodies, files, request)
-            }
-        }
-    }
-
-    fn build_json_request(body: &str, request: RequestBuilder) -> RequestBuilder {
-        request
-            .header("Content-Type", "application/json")
-            .body(body.to_owned())
-    }
-
-    fn build_form_request(
-        bodies: &Option<HashMap<String, String>>,
-        files: &Option<HashMap<String, String>>,
-        request: RequestBuilder,
-    ) -> RequestBuilder {
-        let mut form = multipart::Form::new();
-
-        if let Some(bodies) = bodies {
-            for (key, value) in bodies {
-                form = form.part(key.clone(), multipart::Part::text(value.clone()));
-            }
-        }
-
-        if let Some(files) = files {
-            for (key, value) in files {
-                let multi_pb = MultiProgress::new();
-                let part = wrap_progressbar(value, &multi_pb)
-                    .expect("The progress bar could not be created. Please check the file path.");
-
-                form = form.part(key.clone(), part);
-            }
-        }
-
-        request.multipart(form)
-    }
-}
 
 pub struct BaseClient {
     base_url: Url,
@@ -202,5 +144,134 @@ fn print_call(url: String) {
             "Calling".to_string().blue().bold(),
             url.to_string()
         );
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use httpmock::prelude::*;
+    use lazy_static::lazy_static;
+    use serde::Serialize;
+
+    lazy_static! {
+        static ref MOCK_SERVER: MockServer = MockServer::start();
+    }
+
+    #[derive(Serialize, Deserialize, Debug)]
+    struct ExampleBody {
+        key1: String,
+        key2: String,
+    }
+
+    impl PartialEq for ExampleBody {
+        fn eq(&self, other: &Self) -> bool {
+            self.key1 == other.key1 && self.key2 == other.key2
+        }
+    }
+
+    impl Clone for ExampleBody {
+        fn clone(&self) -> Self {
+            ExampleBody {
+                key1: self.key1.clone(),
+                key2: self.key2.clone(),
+            }
+        }
+    }
+
+    #[test]
+    fn test_get_request() {
+        let client = BaseClient::new(&MOCK_SERVER.base_url(), None).unwrap();
+
+        let _m = MOCK_SERVER.mock(|when, then| {
+            when.method(httpmock::Method::GET).path("/test");
+            then.status(200).body("test");
+        });
+
+        let response = client.get("test", None, &RequestType::Plain);
+        assert!(response.is_ok());
+    }
+
+    #[test]
+    fn test_json_body_request() {
+        // Arrange
+        let client = BaseClient::new(&MOCK_SERVER.base_url(), None).unwrap();
+        let expected_body = ExampleBody {
+            key1: "value1".to_string(),
+            key2: "value2".to_string(),
+        };
+
+        let raw_body = serde_json::to_string(&expected_body).unwrap();
+        let mock = MOCK_SERVER.mock(|when, then| {
+            when.method(httpmock::Method::POST).path("/test_json");
+            then.status(200).json_body(raw_body.clone());
+        });
+
+        // Act
+        let response = client.post("test_json", None, &RequestType::JSON { body: raw_body });
+
+        // Assert
+        assert!(response.is_ok());
+
+        mock.assert();
+    }
+
+    #[test]
+    fn test_multipart_request() {
+        let client = BaseClient::new(&MOCK_SERVER.base_url(), None).unwrap();
+
+        let mock = MOCK_SERVER.mock(|when, then| {
+            when.method(httpmock::Method::POST).path("/test_multipart");
+            then.status(200).body("test");
+        });
+
+        // Mock the body
+        let expected_body = serde_json::json!({
+            "key1": "value1",
+            "key2": "value2"
+        });
+
+        let context = RequestType::Multipart {
+            bodies: Some(HashMap::from([(
+                "body".to_string(),
+                expected_body.to_string(),
+            )])),
+            files: Some(HashMap::from([(
+                "file".to_string(),
+                "tests/fixtures/file.txt".to_string(),
+            )])),
+        };
+
+        // Act
+        let response = client.post("test_multipart", None, &context);
+
+        // Assert
+        assert!(response.is_ok());
+
+        mock.assert();
+    }
+
+    #[test]
+    fn test_parameter_request() {
+        let client = BaseClient::new(&MOCK_SERVER.base_url(), None).unwrap();
+
+        let mock = MOCK_SERVER.mock(|when, then| {
+            when.method(httpmock::Method::GET)
+                .path("/test_parameters")
+                .query_param("key1", "value1")
+                .query_param("key2", "value2");
+            then.status(200).body("test");
+        });
+
+        let parameters = Some(HashMap::from([
+            ("key1".to_string(), "value1".to_string()),
+            ("key2".to_string(), "value2".to_string()),
+        ]));
+
+        let response = client.get("test_parameters", parameters, &RequestType::Plain);
+
+        assert!(response.is_ok());
+
+        mock.assert();
     }
 }
