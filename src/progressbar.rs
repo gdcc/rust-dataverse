@@ -33,8 +33,12 @@ pub fn wrap_progressbar(
     };
 
     // Create a multipart part
+    let filename = file_path
+        .rsplit('/')
+        .next()
+        .expect("The file path is invalid.");
     let part = Part::reader(reader)
-        .file_name(file_path.to_string())
+        .file_name(filename.to_string())
         .mime_str("application/octet-stream")?;
 
     Ok(part)
