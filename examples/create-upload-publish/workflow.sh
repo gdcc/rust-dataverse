@@ -7,7 +7,7 @@ dvcli dataset create --collection $alias --body dataset.json >> dataset_output.j
 
 # Get the persistent ID of the dataset and upload a file
 persistent_id=$(jq -r '.persistentId' dataset_output.json)
-dvcli file upload files/data.csv \
+dvcli dataset upload files/data.csv \
     --id $persistent_id \
     --body file.json
 

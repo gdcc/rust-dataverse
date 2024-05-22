@@ -90,7 +90,7 @@ This command uploads the file `data.csv` to the dataset created in the previous 
 persistent_id=$(jq -r '.persistentId' dataset_output.json)
 
 # Upload the file to the dataset
-dvcli file upload files/data.csv --id $persistent_id --body file.json
+dvcli dataset upload files/data.csv --id $persistent_id --body file.json
 ```
 
 ```bash
