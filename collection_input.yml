@@ -1,7 +1,0 @@
-name: "Another test"
-alias: "another_test"
-description: "This is another test"
-dataverseType: "TEACHING_COURSES"
-affiliation: "University of Oslo"
-dataverseContacts:
-  - contactEmail: "hello@hello.com"
