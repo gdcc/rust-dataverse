@@ -1,32 +1,40 @@
 # Dataverse Rust
 
-This is a Rust client for the Dataverse API and includes a command line interface. It is a work in progress and is not yet feature complete.
+![Build Status](https://github.com/JR-1991/rust-dataverse/actions/workflows/tests.yml/badge.svg)
 
-Current features include:
+**Dataverse Rust** is a client library and command-line interface (CLI) for interacting with the [Dataverse API](https://guides.dataverse.org/en/latest/api/). This project is in active development and not yet feature complete.
 
-* Collection
-  * `create`
-  * `delete`
-  * `publish`
-* Info
-  * `version`
-* Dataset
-  * `get`
-  * `create`
-  * `edit`
-  * `delete`
-  * `publish`
-  * `link`
-* File
-  * `download`
-  * `upload`
-  * `replace`
+## Features
+
+Current capabilities include:
+
+### Collection Management
+- **Create**: Create a new collection within the Dataverse.
+- **Delete**: Remove an existing collection.
+- **Publish**: Publish a collection to make it publicly available.
+
+### General Information
+- **Version**: Retrieve the current version of the Dataverse instance.
+
+### Dataset Management
+- **Get**: Fetch details of a specific dataset.
+- **Create**: Create a new dataset within a collection.
+- **Edit**: Modify an existing dataset.
+- **Delete**: Delete an unpublished dataset.
+- **Upload**: Upload files to a dataset.
+- **Publish**: Publish a dataset to make it publicly available.
+- **Link**: Link datasets to other collections.
+
+### File Management
+- **Replace**: Replace existing files in a dataset.
 
 ## Installation
 
 **Command line**
 
 ```bash
+git clone https://github.com/JR-1991/rust-dataverse.git
+cd rust-dataverse
 cargo install --path .
 ```
 
@@ -46,7 +54,7 @@ dataverse = { git = "https://github.com/JR-1991/rust-dataverse" }
 Before you can use the command line tool, you need to set the `DVCLI_URL` and `DVCLI_TOKEN` environment variables. You can do this by adding the following lines to your `.bashrc` or `.bash_profile` file:
 
 ```bash
-export DVCLI_URL="https://dataverse.harvard.edu"
+export DVCLI_URL="https://your.dataverse.url"
 export DVCLI_TOKEN="your_token_here"
 ```
 
@@ -73,7 +81,12 @@ dvcli info version
 The output will be similar to:
 
 ```bash
-Dataverse Version: 6.2
+Calling: http://localhost:8080/api/info/version
+└──  🎉 Success! - Received the following response:
+
+{
+  "version": "6.2"
+}
 ```
 
 ## Examples
