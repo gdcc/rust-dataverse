@@ -7,7 +7,7 @@ env:
 jobs:
   custom_test:
     runs-on: ubuntu-latest
-    name: Test pyDataverse
+    name: Dataverse Tests
     env:
       PORT: 8080
     steps:
