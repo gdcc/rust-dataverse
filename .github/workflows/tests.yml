@@ -1,0 +1,26 @@
+name: Unit tests
+on: [push]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  custom_test:
+    runs-on: ubuntu-latest
+    name: Test pyDataverse
+    env:
+      PORT: 8080
+    steps:
+      - name: "Checkout"
+        uses: "actions/checkout@v4"
+      - name: Run Dataverse Action
+        id: dataverse
+        uses: gdcc/dataverse-action@main
+      - name: Build
+        run: cargo build --verbose
+      - name: Run tests
+        env:
+          API_TOKEN: ${{ steps.dataverse.outputs.api_token }}
+          BASE_URL: ${{ steps.dataverse.outputs.base_url }}
+          DV_VERSION: ${{ steps.dataverse.outputs.dv_version }}
+        run: cargo test --verbose
