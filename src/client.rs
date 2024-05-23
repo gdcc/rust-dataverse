@@ -13,6 +13,9 @@ pub struct BaseClient {
     client: Client,
 }
 
+// This is the base client that will be used to make requests to the API.
+// Its acts as a wrapper around the reqwest::blocking::Client and provides
+// methods to make GET, POST, PUT, and DELETE requests.
 impl BaseClient {
     pub fn new(base_url: &String, api_token: Option<&String>) -> Result<Self, reqwest::Error> {
         let base_url = Url::parse(base_url).unwrap();
@@ -76,9 +79,9 @@ impl BaseClient {
         parameters: Option<HashMap<String, String>>,
         context: &RequestType,
     ) -> Result<reqwest::blocking::Response, reqwest::Error> {
+        // Process the URL and build the request based on the context
         let url = self.base_url.join(path).unwrap();
         let request = context.to_request(self.client.request(method, url.clone()));
-
         let request = match parameters {
             Some(parameters) => request.query(&parameters),
             None => request,
@@ -86,14 +89,13 @@ impl BaseClient {
 
         print_call(url.to_string());
 
+        // Add the API token if it exists
         let request = match &self.api_token {
             Some(api_token) => request.header("X-Dataverse-key", api_token),
             None => request,
         };
 
-        let response = request.send();
-
-        response
+        request.send()
     }
 }
 

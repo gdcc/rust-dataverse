@@ -2,6 +2,9 @@ use atty::Stream;
 use colored::Colorize;
 use colored_json::prelude::*;
 
+// We distinguish success and error responses with this enum
+// Once the response is parsed, we can check if it's an error or not
+// and act accordingly
 #[derive(Debug, serde::Deserialize, serde::Serialize)]
 pub enum Status {
     OK,
@@ -34,6 +37,8 @@ impl Status {
     }
 }
 
+// This struct acts as a wrapper for the response and
+// models the response we expect from Dataverse
 #[derive(Debug, serde::Deserialize, serde::Serialize)]
 #[allow(non_snake_case)]
 pub struct Response<T> {
@@ -75,6 +80,10 @@ where
         }
     }
 
+    // This function is used to redirect the output to the appropriate stream
+    // If users are redirecting the output to a file, we don't want to print
+    // the success message but only the JSON response to ensure that the output
+    // is clean and can be used in other scripts
     fn redirect_stream(&self, json_str: &str) {
         if atty::is(Stream::Stdout) {
             println!("{}", success_message());
@@ -93,6 +102,12 @@ fn success_message() -> String {
     )
 }
 
+// This is a workaround to tackle the issue of having a nested message
+// in the response currently caused by the editMetadata endpoint
+//
+// For more info:
+// https://dataverse.zulipchat.com/#narrow/stream/378866-troubleshooting/topic/.E2.9C.94.20Duplicate.20file.20response
+//
 #[derive(Debug, serde::Deserialize, serde::Serialize)]
 #[serde(untagged)]
 pub enum Message {

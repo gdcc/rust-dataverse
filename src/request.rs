@@ -3,11 +3,18 @@ use indicatif::MultiProgress;
 use reqwest::blocking::{multipart, RequestBuilder};
 use std::collections::HashMap;
 
+// We distinguish between three types of requests: plain, JSON, and multipart
 pub enum RequestType {
+    // A plain request with no body
     Plain,
+
+    // A JSON request with a JSON body and the
+    // content type set to application/json
     JSON {
         body: String,
     },
+
+    // A multipart request with a body and files
     Multipart {
         bodies: Option<HashMap<String, String>>,
         files: Option<HashMap<String, String>>,
@@ -15,7 +22,7 @@ pub enum RequestType {
 }
 
 impl RequestType {
-    // Convert the request type to a request
+    // Convert the request type to a request builder
     pub fn to_request(&self, request: RequestBuilder) -> RequestBuilder {
         match self {
             RequestType::Plain => request,

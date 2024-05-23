@@ -5,6 +5,8 @@ use std::fs::File;
 use std::io::{self, Read};
 use std::sync::Arc;
 
+// This function is used in the RequestType::Multipart::build_form_request method
+// to wrap a file in a progress bar and return a multipart part.
 pub fn wrap_progressbar(
     file_path: &str,
     multi_pb: &MultiProgress,
@@ -44,6 +46,8 @@ pub fn wrap_progressbar(
     Ok(part)
 }
 
+// A reader that tracks progress and updates a progress bar
+// as data is read from it using the Read trait.
 struct ProgressReader {
     inner: Box<dyn Read + Send>,
     pb: Arc<ProgressBar>,

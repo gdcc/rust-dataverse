@@ -11,6 +11,9 @@ static HEADER: &str = r#"
 --- Dataverse Command Line Interface (DVCLI) ---
 "#;
 
+// This is the basic overall structure of the CLI
+// Subcommands are defined in their respective modules
+// and are processed here.
 #[derive(StructOpt, Debug)]
 #[structopt(about = "CLI to interact with Dataverse")]
 enum DVCLI {
@@ -39,6 +42,8 @@ fn main() {
     }
 }
 
+// This function extracts the base URL and API token from the environment
+// variables DVCLI_URL and DVCLI_TOKEN, respectively.
 fn extract_config_from_env() -> Option<(String, Option<String>)> {
     let base_url = std::env::var("DVCLI_URL").ok()?;
     let api_token = std::env::var("DVCLI_TOKEN").ok();

@@ -2,6 +2,15 @@ use std::str::FromStr;
 
 use serde::{Deserialize, Serialize};
 
+// We differentiate between persistent identifiers and
+// regular identifiers here. This makes it easier to
+// handle the two types of identifiers in the codebase
+// without having to check for the presence of a persistent
+// identifier every time we need to use an identifier.
+//
+// This way users can supply a general identifier without specifying
+// whether it is a persistent identifier or not. The code will
+// automatically determine the type of identifier and use it.
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(untagged)]
 pub enum Identifier {
@@ -12,25 +21,11 @@ pub enum Identifier {
 impl FromStr for Identifier {
     type Err = String;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if s.starts_with("doi:") {
-            Ok(Identifier::PeristentId(s.to_owned()))
-        } else {
-            match s.parse::<i64>() {
-                Ok(id) => Ok(Identifier::Id(id)),
-                Err(_) => Err(format!("Invalid identifier: {}", s)),
-            }
-        }
-    }
-}
-
-impl Identifier {
-    pub fn from_pid_or_id(pid: &Option<String>, id: &Option<i64>) -> Self {
-        if let Some(pid) = pid {
-            Identifier::PeristentId(pid.to_owned())
-        } else if let Some(id) = id {
-            Identifier::Id(id.to_owned())
-        } else {
-            panic!("Either a persistent identifier or an identifier must be provided")
+        // If it can be parsed as an integer, it is an id
+        // Otherwise, it is a persistent id
+        match s.parse::<i64>() {
+            Ok(_) => Ok(Identifier::Id(s.parse::<i64>().unwrap())),
+            Err(_) => Ok(Identifier::PeristentId(s.to_owned())),
         }
     }
 }
