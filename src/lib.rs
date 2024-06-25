@@ -7,6 +7,7 @@ pub mod utils;
 
 pub mod native_api {
     pub mod collection {
+        pub mod content;
         pub mod create;
         pub mod delete;
         pub mod publish;

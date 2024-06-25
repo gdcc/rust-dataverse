@@ -12,6 +12,7 @@ Current capabilities include:
 - **Create**: Create a new collection within the Dataverse.
 - **Delete**: Remove an existing collection.
 - **Publish**: Publish a collection to make it publicly available.
+- **Contents**: Retrieve the contents of a collection.
 
 ### General Information
 - **Version**: Retrieve the current version of the Dataverse instance.

@@ -1,7 +1,7 @@
 use crate::client::BaseClient;
 use crate::native_api::collection::create::{self, CollectionCreateBody};
-use crate::native_api::collection::delete;
 use crate::native_api::collection::publish;
+use crate::native_api::collection::{content, delete};
 use std::path::PathBuf;
 use structopt::StructOpt;
 
@@ -23,6 +23,12 @@ pub enum CollectionSubCommand {
         body: PathBuf,
     },
 
+    #[structopt(about = "Collection content")]
+    Content {
+        #[structopt(help = "Alias of the collection")]
+        alias: String,
+    },
+
     #[structopt(about = "Publish a collection")]
     Publish {
         #[structopt(help = "Alias of the collection to publish")]
@@ -39,6 +45,10 @@ pub enum CollectionSubCommand {
 impl Matcher for CollectionSubCommand {
     fn process(&self, client: &BaseClient) {
         match self {
+            CollectionSubCommand::Content { alias } => {
+                let response = content::get_collection_content(client, alias);
+                evaluate_and_print_response(response);
+            }
             CollectionSubCommand::Create { parent, body } => {
                 let body: CollectionCreateBody =
                     parse_file::<_, CollectionCreateBody>(body).expect("Failed to parse the file");

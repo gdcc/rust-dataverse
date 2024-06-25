@@ -1,0 +1,33 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "title": "CollectionContent",
+  "properties": {
+    "id": {
+      "type": "integer"
+    },
+    "identifier": {
+      "type": "string"
+    },
+    "persistentUrl": {
+      "type": "string"
+    },
+    "protocol": {
+      "type": "string"
+    },
+    "authority": {
+      "type": "string"
+    },
+    "publisher": {
+      "type": "string"
+    },
+    "publicationDate": {
+      "type": "string"
+    },
+    "storageIdentifier": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string"
+    }
+  }
+}
