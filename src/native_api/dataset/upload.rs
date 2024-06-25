@@ -27,7 +27,6 @@ pub fn upload_file_to_dataset(
 
     // Build hash maps for the request
     let file = HashMap::from([("file".to_string(), fpath.clone())]);
-
     let body = match body {
         Some(body) => Some(HashMap::from([(
             "jsonData".to_string(),
@@ -48,7 +47,7 @@ pub fn upload_file_to_dataset(
             Some(HashMap::from([("persistentId".to_string(), id.clone())])),
             &context,
         ),
-        Identifier::Id(id) => client.post(&format!("api/files/{}", id), None, &context),
+        Identifier::Id(_) => client.post(path.as_str(), None, &context),
     };
 
     evaluate_response::<UploadResponse>(response)
