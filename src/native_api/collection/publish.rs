@@ -3,14 +3,14 @@ use serde_json;
 use typify::import_types;
 
 use crate::{
-    client::{evaluate_response, BaseClient},
+    client::{BaseClient, evaluate_response},
     request::RequestType,
     response::Response,
 };
 
 import_types!(schema = "models/collection/create.json");
 
-pub fn publish_collection(
+pub async fn publish_collection(
     client: &BaseClient,
     alias: &String,
 ) -> Result<Response<CollectionCreateResponse>, String> {
@@ -19,7 +19,7 @@ pub fn publish_collection(
 
     // Send request
     let context = RequestType::Plain;
-    let response = client.post(url.as_str(), None, &context);
+    let response = client.post(url.as_str(), None, &context).await;
 
-    evaluate_response::<CollectionCreateResponse>(response)
+    evaluate_response::<CollectionCreateResponse>(response).await
 }

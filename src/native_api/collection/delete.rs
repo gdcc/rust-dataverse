@@ -2,14 +2,14 @@ use serde::{Deserialize, Serialize};
 use typify::import_types;
 
 use crate::{
-    client::{evaluate_response, BaseClient},
+    client::{BaseClient, evaluate_response},
     request::RequestType,
     response::Response,
 };
 
 import_types!(schema = "models/collection/delete.json");
 
-pub fn delete_collection(
+pub async fn delete_collection(
     client: &BaseClient,
     alias: &String,
 ) -> Result<Response<CollectionDeleteResponse>, String> {
@@ -18,7 +18,7 @@ pub fn delete_collection(
 
     // Send request
     let context = RequestType::Plain;
-    let response = client.delete(url.as_str(), None, &context);
+    let response = client.delete(url.as_str(), None, &context).await;
 
-    evaluate_response::<CollectionDeleteResponse>(response)
+    evaluate_response::<CollectionDeleteResponse>(response).await
 }

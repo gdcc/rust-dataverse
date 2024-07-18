@@ -13,8 +13,10 @@ pub enum InfoSubCommand {
 
 impl Matcher for InfoSubCommand {
     fn process(&self, client: &BaseClient) {
+        let runtime = tokio::runtime::Runtime::new().unwrap();
         let response = match self {
-            InfoSubCommand::Version => native_api::info::version::get_version(client),
+            InfoSubCommand::Version =>
+                runtime.block_on(native_api::info::version::get_version(client)),
         };
 
         evaluate_and_print_response(response);

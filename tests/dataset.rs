@@ -2,11 +2,12 @@
 mod tests {
     use std::fs;
 
+    use lazy_static::lazy_static;
+
     use dataverse::client::BaseClient;
     use dataverse::identifier::Identifier;
     use dataverse::native_api::dataset;
     use dataverse::native_api::dataset::create::DatasetCreateBody;
-    use lazy_static::lazy_static;
 
     lazy_static! {
         static ref BASE_URL: String = std::env::var("BASE_URL")
@@ -20,8 +21,8 @@ mod tests {
             .expect("API_TOKEN must be set for tests");
     }
 
-    #[test]
-    fn test_create_delete_dataset() {
+    #[tokio::test]
+    async fn test_create_delete_dataset() {
         // Part 1: Create a dataset
         // Arrange
         let client = BaseClient::new(&BASE_URL.to_string(), Some(&API_TOKEN.to_string())).unwrap();
@@ -30,9 +31,9 @@ mod tests {
         let body = serde_json::from_str::<DatasetCreateBody>(&body);
 
         // Act
-        let response =
-            dataset::create::create_dataset(&client, &"Root".to_string(), &body.unwrap())
-                .expect("Could not create dataset");
+        let response = dataset::create::create_dataset(&client, &"Root".to_string(), &body.unwrap())
+            .await
+            .expect("Could not create dataset");
 
         // Assert
         assert_eq!(
@@ -45,6 +46,7 @@ mod tests {
         // Act
         let dataset_id = response.data.unwrap().id.expect("Could not get dataset id");
         let response = dataset::delete::delete_dataset(&client, &dataset_id)
+            .await
             .expect("Could not delete dataset");
 
         // Assert
@@ -55,8 +57,8 @@ mod tests {
         );
     }
 
-    #[test]
-    fn test_dataset_publish() {
+    #[tokio::test]
+    async fn test_dataset_publish() {
         // Part 1: Create a dataset
         // Arrange
         let client = BaseClient::new(&BASE_URL.to_string(), Some(&API_TOKEN.to_string())).unwrap();
@@ -65,9 +67,9 @@ mod tests {
         let body = serde_json::from_str::<DatasetCreateBody>(&body);
 
         // Act
-        let response =
-            dataset::create::create_dataset(&client, &"Root".to_string(), &body.unwrap())
-                .expect("Could not create dataset");
+        let response = dataset::create::create_dataset(&client, &"Root".to_string(), &body.unwrap())
+            .await
+            .expect("Could not create dataset");
 
         // Assert
         assert_eq!(
@@ -88,7 +90,8 @@ mod tests {
             &dataset_id,
             &dataset::publish::Version::Major,
         )
-        .expect("Could not publish dataset");
+            .await
+            .expect("Could not publish dataset");
 
         // Assert
         assert_eq!(
@@ -98,8 +101,8 @@ mod tests {
         );
     }
 
-    #[test]
-    fn test_dataset_file_upload() {
+    #[tokio::test]
+    async fn test_dataset_file_upload() {
         // Part 1: Create a dataset
         // Arrange
         let client = BaseClient::new(&BASE_URL.to_string(), Some(&API_TOKEN.to_string())).unwrap();
@@ -109,6 +112,7 @@ mod tests {
         let body = serde_json::from_str::<DatasetCreateBody>(&body);
         let response =
             dataset::create::create_dataset(&client, &"Root".to_string(), &body.unwrap())
+                .await
                 .expect("Could not create dataset");
 
         // Act
@@ -117,14 +121,16 @@ mod tests {
             .unwrap()
             .persistent_id
             .expect("Could not get dataset pid");
-        let dataset_id = Identifier::PeristentId(dataset_id);
+        let dataset_id = Identifier::PersistentId(dataset_id);
         let response = dataset::upload::upload_file_to_dataset(
             &client,
             &dataset_id,
             &"tests/fixtures/create_dataset_body.json".to_string(),
             &None,
+            None,
         )
-        .expect("Could not upload file");
+            .await
+            .expect("Could not upload file");
 
         // Assert
         assert_eq!(

@@ -1,14 +1,15 @@
-use crate::{
-    client::{evaluate_response, BaseClient},
-    request::RequestType,
-    response::Response,
-};
 use serde::{Deserialize, Serialize};
 use typify::import_types;
 
+use crate::{
+    client::{BaseClient, evaluate_response},
+    request::RequestType,
+    response::Response,
+};
+
 import_types!(schema = "models/dataset/delete.json");
 
-pub fn delete_dataset(
+pub async fn delete_dataset(
     client: &BaseClient,
     id: &i64,
 ) -> Result<Response<UnpublishedDatasetDeleteResponse>, String> {
@@ -17,7 +18,7 @@ pub fn delete_dataset(
 
     // Send request
     let context = RequestType::Plain;
-    let response = client.delete(url.as_str(), None, &context);
+    let response = client.delete(url.as_str(), None, &context).await;
 
-    evaluate_response::<UnpublishedDatasetDeleteResponse>(response)
+    evaluate_response::<UnpublishedDatasetDeleteResponse>(response).await
 }

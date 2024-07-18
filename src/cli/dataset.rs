@@ -1,4 +1,7 @@
-use super::base::{evaluate_and_print_response, parse_file, Matcher};
+use std::path::PathBuf;
+
+use structopt::StructOpt;
+
 use crate::client::BaseClient;
 use crate::identifier::Identifier;
 use crate::native_api::dataset::create::{self, DatasetCreateBody};
@@ -9,8 +12,8 @@ use crate::native_api::dataset::get;
 use crate::native_api::dataset::link;
 use crate::native_api::dataset::publish::{self, Version};
 use crate::native_api::dataset::upload::{self, UploadBody};
-use std::path::PathBuf;
-use structopt::StructOpt;
+
+use super::base::{evaluate_and_print_response, parse_file, Matcher};
 
 #[derive(StructOpt, Debug)]
 #[structopt(about = "Handle datasets of the Dataverse instance")]
@@ -98,48 +101,49 @@ pub enum DatasetSubCommand {
 
 impl Matcher for DatasetSubCommand {
     fn process(&self, client: &BaseClient) {
+        let runtime = tokio::runtime::Runtime::new().unwrap();
         match self {
             DatasetSubCommand::Get { id } => {
-                let response = get::get_dataset_meta(client, id);
+                let response = runtime.block_on(get::get_dataset_meta(client, id));
                 evaluate_and_print_response(response);
             }
             DatasetSubCommand::Create { collection, body } => {
                 let body: DatasetCreateBody =
                     parse_file::<_, DatasetCreateBody>(body).expect("Failed to parse the file");
-                let response = create::create_dataset(client, &collection, &body);
+                let response = runtime.block_on(create::create_dataset(client, &collection, &body));
                 evaluate_and_print_response(response);
             }
             DatasetSubCommand::Publish { pid, version } => {
-                let response = publish::publish_dataset(client, &pid, version);
+                let response = runtime.block_on(publish::publish_dataset(client, &pid, version));
                 evaluate_and_print_response(response);
             }
             DatasetSubCommand::Delete { id } => {
-                let response = delete::delete_dataset(client, id);
+                let response = runtime.block_on(delete::delete_dataset(client, id));
                 evaluate_and_print_response(response);
             }
             DatasetSubCommand::Edit { pid, body, replace } => {
                 let body =
                     parse_file::<_, EditMetadataBody>(body).expect("Failed to parse the file");
-                let response = edit::edit_dataset_metadata(client, &pid, replace, &body);
+                let response =
+                    runtime.block_on(edit::edit_dataset_metadata(client, &pid, replace, &body));
                 evaluate_and_print_response(response);
             }
             DatasetSubCommand::Link { id, collection } => {
-                let response = link::link_dataset(client, id, collection);
+                let response = runtime.block_on(link::link_dataset(client, id, collection));
                 evaluate_and_print_response(response);
             }
             DatasetSubCommand::Upload { id, path, body } => {
-                let body = match body {
-                    Some(body) => {
-                        Some(parse_file::<_, UploadBody>(body).expect("Failed to parse the file"))
-                    }
-                    _ => None,
-                };
-                let response = upload::upload_file_to_dataset(
+                let body = body.as_ref().map(|body| {
+                    parse_file::<_, UploadBody>(body).expect("Failed to parse the file")
+                });
+
+                let response = runtime.block_on(upload::upload_file_to_dataset(
                     client,
-                    &id,
+                    id,
                     &path.to_str().unwrap().to_string(),
                     &body,
-                );
+                    None,
+                ));
 
                 evaluate_and_print_response(response);
             }

@@ -1,10 +1,11 @@
 use std::path::PathBuf;
+
 use structopt::StructOpt;
 
-use crate::native_api::file::replace;
 use crate::{client::BaseClient, native_api::dataset::upload::UploadBody};
+use crate::native_api::file::replace;
 
-use super::base::{evaluate_and_print_response, parse_file, Matcher};
+use super::base::{evaluate_and_print_response, Matcher, parse_file};
 
 #[derive(StructOpt, Debug)]
 #[structopt(about = "Handle files of a Dataverse instance")]
@@ -31,6 +32,7 @@ pub enum FileSubCommand {
 
 impl Matcher for FileSubCommand {
     fn process(&self, client: &BaseClient) {
+        let runtime = tokio::runtime::Runtime::new().unwrap();
         match self {
             FileSubCommand::Replace {
                 id,
@@ -40,7 +42,7 @@ impl Matcher for FileSubCommand {
             } => {
                 let body = prepare_replace_body(body, force);
                 let response =
-                    replace::replace_file(client, id, &path.to_str().unwrap().to_string(), &body);
+                    runtime.block_on(replace::replace_file(client, id, &path.to_str().unwrap().to_string(), &body, None));
 
                 evaluate_and_print_response(response);
             }

@@ -3,14 +3,14 @@ use serde_json;
 use typify::import_types;
 
 use crate::{
-    client::{evaluate_response, BaseClient},
+    client::{BaseClient, evaluate_response},
     request::RequestType,
     response::Response,
 };
 
 import_types!(schema = "models/dataset/create.json");
 
-pub fn create_dataset(
+pub async fn create_dataset(
     client: &BaseClient,
     parent: &String,
     body: &DatasetCreateBody,
@@ -23,7 +23,7 @@ pub fn create_dataset(
 
     // Send request
     let context = RequestType::JSON { body: body.clone() };
-    let response = client.post(url.as_str(), None, &context);
+    let response = client.post(url.as_str(), None, &context).await;
 
-    evaluate_response::<DatasetCreateResponse>(response)
+    evaluate_response::<DatasetCreateResponse>(response).await
 }

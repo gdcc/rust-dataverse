@@ -1,12 +1,13 @@
 use std::{collections::HashMap, str::FromStr};
 
+use serde::{Deserialize, Serialize};
+use typify::import_types;
+
 use crate::{
-    client::{evaluate_response, BaseClient},
+    client::{BaseClient, evaluate_response},
     request::RequestType,
     response::Response,
 };
-use serde::{Deserialize, Serialize};
-use typify::import_types;
 
 import_types!(schema = "models/dataset/publish.json");
 
@@ -34,7 +35,7 @@ impl FromStr for Version {
     }
 }
 
-pub fn publish_dataset(
+pub async fn publish_dataset(
     client: &BaseClient,
     pid: &String,
     version: &Version,
@@ -57,7 +58,7 @@ pub fn publish_dataset(
 
     // Send request
     let context = RequestType::Plain;
-    let response = client.post(url, parameters, &context);
+    let response = client.post(url, parameters, &context).await;
 
-    evaluate_response::<DatasetPublishResponse>(response)
+    evaluate_response::<DatasetPublishResponse>(response).await
 }

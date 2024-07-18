@@ -2,14 +2,14 @@ use serde::{Deserialize, Serialize};
 use typify::import_types;
 
 use crate::{
-    client::{evaluate_response, BaseClient},
+    client::{BaseClient, evaluate_response},
     request::RequestType,
     response::Response,
 };
 
 import_types!(schema = "models/collection/content.json");
 
-pub fn get_collection_content(
+pub async fn get_collection_content(
     client: &BaseClient,
     alias: &String,
 ) -> Result<Response<Vec<CollectionContent>>, String> {
@@ -18,7 +18,7 @@ pub fn get_collection_content(
 
     // Send request
     let context = RequestType::Plain;
-    let response = client.get(url.as_str(), None, &context);
+    let response = client.get(url.as_str(), None, &context).await;
 
-    evaluate_response::<Vec<CollectionContent>>(response)
+    evaluate_response::<Vec<CollectionContent>>(response).await
 }

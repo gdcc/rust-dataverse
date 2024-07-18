@@ -1,18 +1,18 @@
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
+use serde::{Deserialize, Serialize};
 use serde_json;
 use typify::import_types;
 
 use crate::{
-    client::{evaluate_response, BaseClient},
+    client::{BaseClient, evaluate_response},
     request::RequestType,
     response::Response,
 };
 
 import_types!(schema = "models/dataset/edit.json");
 
-pub fn edit_dataset_metadata(
+pub async fn edit_dataset_metadata(
     client: &BaseClient,
     pid: &String,
     replace: &bool,
@@ -32,7 +32,7 @@ pub fn edit_dataset_metadata(
 
     // Send request
     let context = RequestType::JSON { body: body.clone() };
-    let response = client.put(url, parameters, &context);
+    let response = client.put(url, parameters, &context).await;
 
-    evaluate_response::<Dataset>(response)
+    evaluate_response::<Dataset>(response).await
 }

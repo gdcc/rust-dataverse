@@ -1,11 +1,13 @@
-use crate::request::RequestType;
-use crate::response::Response;
+use std::collections::HashMap;
+
 use atty::Stream;
 use colored::Colorize;
-use reqwest::blocking::Client;
+use reqwest::Client;
 use reqwest::Url;
 use serde::Deserialize;
-use std::collections::HashMap;
+
+use crate::request::RequestType;
+use crate::response::Response;
 
 pub struct BaseClient {
     base_url: Url,
@@ -27,61 +29,62 @@ impl BaseClient {
         })
     }
 
-    pub fn get(
+    pub async fn get(
         &self,
         path: &str,
         parameters: Option<HashMap<String, String>>,
         context: &RequestType,
-    ) -> Result<reqwest::blocking::Response, reqwest::Error> {
-        self.perform_request(reqwest::Method::GET, path, parameters, context)
+    ) -> Result<reqwest::Response, reqwest::Error> {
+        self.perform_request(reqwest::Method::GET, path, parameters, context).await
     }
 
-    pub fn post(
+    pub async fn post(
         &self,
         path: &str,
         parameters: Option<HashMap<String, String>>,
         context: &RequestType,
-    ) -> Result<reqwest::blocking::Response, reqwest::Error> {
-        self.perform_request(reqwest::Method::POST, path, parameters, context)
+    ) -> Result<reqwest::Response, reqwest::Error> {
+        self.perform_request(reqwest::Method::POST, path, parameters, context).await
     }
 
-    pub fn put(
+    pub async fn put(
         &self,
         path: &str,
         parameters: Option<HashMap<String, String>>,
         context: &RequestType,
-    ) -> Result<reqwest::blocking::Response, reqwest::Error> {
-        self.perform_request(reqwest::Method::PUT, path, parameters, context)
+    ) -> Result<reqwest::Response, reqwest::Error> {
+        self.perform_request(reqwest::Method::PUT, path, parameters, context).await
     }
 
-    pub fn delete(
+    pub async fn delete(
         &self,
         path: &str,
         parameters: Option<HashMap<String, String>>,
         context: &RequestType,
-    ) -> Result<reqwest::blocking::Response, reqwest::Error> {
-        self.perform_request(reqwest::Method::DELETE, path, parameters, context)
+    ) -> Result<reqwest::Response, reqwest::Error> {
+        self.perform_request(reqwest::Method::DELETE, path, parameters, context).await
     }
 
-    pub fn patch(
+    pub async fn patch(
         &self,
         path: &str,
         parameters: Option<HashMap<String, String>>,
         context: &RequestType,
-    ) -> Result<reqwest::blocking::Response, reqwest::Error> {
-        self.perform_request(reqwest::Method::PATCH, path, parameters, context)
+    ) -> Result<reqwest::Response, reqwest::Error> {
+        self.perform_request(reqwest::Method::PATCH, path, parameters, context).await
     }
 
-    fn perform_request(
+    async fn perform_request(
         &self,
         method: reqwest::Method,
         path: &str,
         parameters: Option<HashMap<String, String>>,
         context: &RequestType,
-    ) -> Result<reqwest::blocking::Response, reqwest::Error> {
+    ) -> Result<reqwest::Response, reqwest::Error> {
         // Process the URL and build the request based on the context
         let url = self.base_url.join(path).unwrap();
-        let request = context.to_request(self.client.request(method, url.clone()));
+        let request = context
+            .to_request(self.client.request(method, url.clone())).await;
         let request = match parameters {
             Some(parameters) => request.query(&parameters),
             None => request,
@@ -95,13 +98,13 @@ impl BaseClient {
             None => request,
         };
 
-        request.send()
+        request.send().await
     }
 }
 
 // Helper function to evaluate a response
-pub fn evaluate_response<T>(
-    response: Result<reqwest::blocking::Response, reqwest::Error>,
+pub async fn evaluate_response<T>(
+    response: Result<reqwest::Response, reqwest::Error>,
 ) -> Result<Response<T>, String>
 where
     T: for<'de> Deserialize<'de>,
@@ -110,33 +113,33 @@ where
     let response = match response {
         Ok(response) => response,
         Err(err) => {
-            print_error::<T>(err.to_string());
+            print_error(err.to_string());
             panic!();
         }
     };
 
     // Try to read the response into the response struct
-    let raw_content = response.text().unwrap();
+    let raw_content = response.text().await.unwrap();
     let json = serde_json::from_str::<Response<T>>(&raw_content);
 
-    return match json {
+    match json {
         Ok(json) => Ok(json),
         Err(err) => {
-            print_error::<T>(
+            print_error(
                 format!(
                     "{} - {}",
                     err.to_string().red().bold(),
                     raw_content.red().bold(),
                 )
-                .to_string(),
+                    .to_string(),
             );
-            panic!();
+            panic!("{}", err.to_string());
         }
-    };
+    }
 }
 
-fn print_error<T>(error: String) {
-    println!("\n{} {}\n", "Error:".red().bold(), error,);
+fn print_error(error: String) {
+    println!("\n{} {}\n", "Error:".red().bold(), error, );
 }
 
 fn print_call(url: String) {
@@ -151,10 +154,11 @@ fn print_call(url: String) {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use httpmock::prelude::*;
     use lazy_static::lazy_static;
     use serde::Serialize;
+
+    use super::*;
 
     lazy_static! {
         static ref MOCK_SERVER: MockServer = MockServer::start();
@@ -181,8 +185,8 @@ mod tests {
         }
     }
 
-    #[test]
-    fn test_get_request() {
+    #[tokio::test]
+    async fn test_get_request() {
         let client = BaseClient::new(&MOCK_SERVER.base_url(), None).unwrap();
 
         let _m = MOCK_SERVER.mock(|when, then| {
@@ -190,12 +194,14 @@ mod tests {
             then.status(200).body("test");
         });
 
-        let response = client.get("test", None, &RequestType::Plain);
+        let response = client
+            .get("test", None, &RequestType::Plain)
+            .await;
         assert!(response.is_ok());
     }
 
-    #[test]
-    fn test_json_body_request() {
+    #[tokio::test]
+    async fn test_json_body_request() {
         // Arrange
         let client = BaseClient::new(&MOCK_SERVER.base_url(), None).unwrap();
         let expected_body = ExampleBody {
@@ -210,7 +216,9 @@ mod tests {
         });
 
         // Act
-        let response = client.post("test_json", None, &RequestType::JSON { body: raw_body });
+        let response = client
+            .post("test_json", None, &RequestType::JSON { body: raw_body })
+            .await;
 
         // Assert
         assert!(response.is_ok());
@@ -218,8 +226,8 @@ mod tests {
         mock.assert();
     }
 
-    #[test]
-    fn test_multipart_request() {
+    #[tokio::test]
+    async fn test_multipart_request() {
         let client = BaseClient::new(&MOCK_SERVER.base_url(), None).unwrap();
 
         let mock = MOCK_SERVER.mock(|when, then| {
@@ -242,10 +250,13 @@ mod tests {
                 "file".to_string(),
                 "tests/fixtures/file.txt".to_string(),
             )])),
+            callbacks: None,
         };
 
         // Act
-        let response = client.post("test_multipart", None, &context);
+        let response = client
+            .post("test_multipart", None, &context)
+            .await;
 
         // Assert
         assert!(response.is_ok());
@@ -253,8 +264,8 @@ mod tests {
         mock.assert();
     }
 
-    #[test]
-    fn test_parameter_request() {
+    #[tokio::test]
+    async fn test_parameter_request() {
         let client = BaseClient::new(&MOCK_SERVER.base_url(), None).unwrap();
 
         let mock = MOCK_SERVER.mock(|when, then| {
@@ -270,7 +281,9 @@ mod tests {
             ("key2".to_string(), "value2".to_string()),
         ]));
 
-        let response = client.get("test_parameters", parameters, &RequestType::Plain);
+        let response = client
+            .get("test_parameters", parameters, &RequestType::Plain)
+            .await;
 
         assert!(response.is_ok());
 

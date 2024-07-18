@@ -1,26 +1,26 @@
+use std::collections::HashMap;
+
 use crate::{
-    client::{evaluate_response, BaseClient},
+    client::{BaseClient, evaluate_response},
     identifier::Identifier,
     native_api::dataset::edit::GetDatasetResponse,
     request::RequestType,
     response::Response,
 };
 
-use std::collections::HashMap;
-
-pub fn get_dataset_meta(
+pub async fn get_dataset_meta(
     client: &BaseClient,
     id: &Identifier,
 ) -> Result<Response<GetDatasetResponse>, String> {
     // Endpoint metadata
     let url = match id {
-        Identifier::PeristentId(_) => "api/datasets/:persistentId".to_string(),
+        Identifier::PersistentId(_) => "api/datasets/:persistentId".to_string(),
         Identifier::Id(id) => format!("api/datasets/{}", id),
     };
 
     // Build Parameters
     let parameters = match id {
-        Identifier::PeristentId(id) => {
+        Identifier::PersistentId(id) => {
             Some(HashMap::from([("persistentId".to_string(), id.clone())]))
         }
         Identifier::Id(_) => None,
@@ -28,7 +28,7 @@ pub fn get_dataset_meta(
 
     // Send request
     let context = RequestType::Plain;
-    let response = client.get(url.as_str(), parameters, &context);
+    let response = client.get(url.as_str(), parameters, &context).await;
 
-    evaluate_response::<GetDatasetResponse>(response)
+    evaluate_response::<GetDatasetResponse>(response).await
 }
