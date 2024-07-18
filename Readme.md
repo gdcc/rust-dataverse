@@ -1,10 +1,10 @@
-![Build Status](https://github.com/JR-1991/rust-dataverse/actions/workflows/tests.yml/badge.svg)
-
 <div align="center">
   <img src="./static/image.png" width="190">
 </div>
 
 # Dataverse Rust
+
+![Build Status](https://github.com/JR-1991/rust-dataverse/actions/workflows/tests.yml/badge.svg)
 
 **Dataverse Rust** is a client library and command-line interface (CLI) for interacting with
 the [Dataverse API](https://guides.dataverse.org/en/latest/api/). This project is in active development and not yet
