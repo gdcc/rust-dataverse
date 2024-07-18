@@ -14,7 +14,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(untagged)]
 pub enum Identifier {
-    PeristentId(String),
+    PersistentId(String),
     Id(i64),
 }
 
@@ -25,7 +25,7 @@ impl FromStr for Identifier {
         // Otherwise, it is a persistent id
         match s.parse::<i64>() {
             Ok(_) => Ok(Identifier::Id(s.parse::<i64>().unwrap())),
-            Err(_) => Ok(Identifier::PeristentId(s.to_owned())),
+            Err(_) => Ok(Identifier::PersistentId(s.to_owned())),
         }
     }
 }
