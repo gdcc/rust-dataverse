@@ -3,11 +3,12 @@ use std::fs;
 use std::path::Path;
 use std::str::FromStr;
 
-use crate::client::BaseClient;
-use crate::response::Response;
 use clap::ArgMatches;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
+
+use crate::client::BaseClient;
+use crate::response::Response;
 
 pub fn evaluate_and_print_response<T: Serialize>(response: Result<Response<T>, String>) {
     match response {
