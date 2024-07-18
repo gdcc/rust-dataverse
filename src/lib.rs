@@ -1,3 +1,4 @@
+#![deny(unused_crate_dependencies)]
 pub mod client;
 pub mod identifier;
 pub mod filewrapper;
