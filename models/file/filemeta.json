@@ -48,6 +48,9 @@
         "storageIdentifier": {
           "type": "string"
         },
+        "directoryLabel": {
+          "type": "string"
+        },
         "rootDataFileId": {
           "type": "integer"
         },
