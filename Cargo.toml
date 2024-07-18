@@ -1,6 +1,6 @@
 [package]
 name = "dataverse"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -11,7 +11,7 @@ colored = "2.1.0"
 exitcode = "1.1.2"
 futures-io = "0.3.30"
 regress = "0.9.1"
-reqwest = { version = "0.12.4", features = ["blocking", "json", "multipart"] }
+reqwest = { version = "0.12.4", features = ["blocking", "json", "multipart", "stream"] }
 serde = { version = "1.0.201", features = ["derive"] }
 serde_json = "1.0.117"
 serde_with = "3.8.1"
@@ -24,10 +24,14 @@ keyring = "2.3.3"
 toml = "0.8.13"
 indicatif = "0.17.8"
 jwalk = "0.8.1"
+tokio = { version = "1.37.0", features = ["full"] }
+tokio-util = "0.7.11"
+bytes = "1.6.0"
+futures = "0.3.30"
 
 [[bin]]
 name = "dvcli"
-path = "src/main.rs"
+path = "src/bin/cli.rs"
 
 [dev-dependencies]
 httpmock = "0.7.0"
