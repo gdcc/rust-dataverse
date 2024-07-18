@@ -29,4 +29,3 @@ path = "src/bin/cli.rs"
 [dev-dependencies]
 httpmock = "0.7.0"
 lazy_static = "1.4.0"
-tempfile = "3.10.1"

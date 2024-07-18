@@ -608,7 +608,6 @@ dependencies = [
  "serde_json",
  "serde_yaml",
  "structopt",
- "tempfile",
  "tokio",
  "tokio-util",
  "typify",
