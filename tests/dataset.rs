@@ -11,13 +11,11 @@ mod tests {
 
     lazy_static! {
         static ref BASE_URL: String = std::env::var("BASE_URL")
-            .ok()
             .expect("BASE_URL must be set for tests");
     }
 
     lazy_static! {
         static ref API_TOKEN: String = std::env::var("API_TOKEN")
-            .ok()
             .expect("API_TOKEN must be set for tests");
     }
 
@@ -25,7 +23,7 @@ mod tests {
     async fn test_create_delete_dataset() {
         // Part 1: Create a dataset
         // Arrange
-        let client = BaseClient::new(&BASE_URL.to_string(), Some(&API_TOKEN.to_string())).unwrap();
+        let client = BaseClient::new(&BASE_URL, Some(&API_TOKEN)).unwrap();
         let body = fs::read_to_string("tests/fixtures/create_dataset_body.json")
             .expect("Could not read body");
         let body = serde_json::from_str::<DatasetCreateBody>(&body);
@@ -105,7 +103,7 @@ mod tests {
     async fn test_dataset_file_upload() {
         // Part 1: Create a dataset
         // Arrange
-        let client = BaseClient::new(&BASE_URL.to_string(), Some(&API_TOKEN.to_string())).unwrap();
+        let client = BaseClient::new(&BASE_URL, Some(&API_TOKEN)).unwrap();
         let body = fs::read_to_string("tests/fixtures/create_dataset_body.json")
             .expect("Could not read body");
 
