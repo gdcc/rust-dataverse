@@ -7,7 +7,10 @@ use crate::{
     response::Response,
 };
 
-import_types!(schema = "models/dataset/delete.json");
+import_types!(
+    schema = "models/dataset/delete.json",
+    struct_builder = true,
+);
 
 pub async fn delete_dataset(
     client: &BaseClient,

@@ -10,7 +10,10 @@ use crate::{
     response::Response,
 };
 
-import_types!(schema = "models/dataset/edit.json");
+import_types!(
+    schema = "models/dataset/edit.json",
+    struct_builder = true,
+);
 
 pub async fn edit_dataset_metadata(
     client: &BaseClient,

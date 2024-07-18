@@ -9,7 +9,10 @@ use crate::{
     response::Response,
 };
 
-import_types!(schema = "models/dataset/publish.json");
+import_types!(
+    schema = "models/dataset/publish.json",
+    struct_builder = true,
+);
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum Version {

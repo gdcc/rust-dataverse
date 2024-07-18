@@ -9,7 +9,10 @@ use crate::{
     utils::get_dataset_id,
 };
 
-import_types!("models/message.json");
+import_types!(
+    schema = "models/message.json",
+    struct_builder = true,
+);
 
 pub async fn link_dataset(
     client: &BaseClient,

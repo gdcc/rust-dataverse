@@ -12,7 +12,10 @@ use crate::{
     response::Response,
 };
 
-import_types!(schema = "models/file/filemeta.json");
+import_types!(
+    schema = "models/file/filemeta.json",
+    struct_builder = true,
+);
 
 pub async fn upload_file_to_dataset(
     client: &BaseClient,

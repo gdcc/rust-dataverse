@@ -8,7 +8,10 @@ use crate::{
     response::Response,
 };
 
-import_types!(schema = "models/dataset/create.json");
+import_types!(
+    schema = "models/dataset/create.json",
+    struct_builder = true,
+);
 
 pub async fn create_dataset(
     client: &BaseClient,
