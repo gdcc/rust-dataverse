@@ -1,7 +1,11 @@
-use crate::progressbar::wrap_progressbar;
-use indicatif::MultiProgress;
-use reqwest::blocking::{multipart, RequestBuilder};
 use std::collections::HashMap;
+use std::sync::Arc;
+
+use indicatif::MultiProgress;
+use reqwest::{multipart, RequestBuilder};
+
+use crate::callback::CallbackFun;
+use crate::filewrapper::create_multipart;
 
 // We distinguish between three types of requests: plain, JSON, and multipart
 pub enum RequestType {
@@ -18,17 +22,22 @@ pub enum RequestType {
     Multipart {
         bodies: Option<HashMap<String, String>>,
         files: Option<HashMap<String, String>>,
+        callbacks: Option<HashMap<String, CallbackFun>>,
     },
 }
 
 impl RequestType {
     // Convert the request type to a request builder
-    pub fn to_request(&self, request: RequestBuilder) -> RequestBuilder {
+    pub async fn to_request(&self, request: RequestBuilder) -> RequestBuilder {
         match self {
             RequestType::Plain => request,
             RequestType::JSON { body } => Self::build_json_request(body, request),
-            RequestType::Multipart { bodies, files } => {
-                Self::build_form_request(bodies, files, request)
+            RequestType::Multipart {
+                bodies,
+                files,
+                callbacks
+            } => {
+                Self::build_form_request(bodies, files, request, callbacks.clone()).await
             }
         }
     }
@@ -39,10 +48,11 @@ impl RequestType {
             .body(body.to_owned())
     }
 
-    fn build_form_request(
+    async fn build_form_request(
         bodies: &Option<HashMap<String, String>>,
         files: &Option<HashMap<String, String>>,
         request: RequestBuilder,
+        callbacks: Option<HashMap<String, CallbackFun>>,
     ) -> RequestBuilder {
         let mut form = multipart::Form::new();
 
@@ -54,8 +64,14 @@ impl RequestType {
 
         if let Some(files) = files {
             for (key, value) in files {
-                let multi_pb = MultiProgress::new();
-                let part = wrap_progressbar(value, &multi_pb)
+                let multi_pb = Arc::new(MultiProgress::new());
+                let local_callback = match &callbacks {
+                    Some(callbacks) => callbacks.get(key).cloned(),
+                    None => None,
+                };
+
+                let part = create_multipart(value, multi_pb, local_callback)
+                    .await
                     .expect("The progress bar could not be created. Please check the file path.");
 
                 form = form.part(key.clone(), part);
@@ -68,15 +84,18 @@ impl RequestType {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use reqwest::blocking::Client;
     use std::collections::HashMap;
 
-    #[test]
-    fn test_request_type_to_request_plain() {
+    use reqwest::Client;
+
+    use super::*;
+
+    #[tokio::test]
+    async fn test_request_type_to_request_plain() {
         // Arrange
         let request = RequestType::Plain
-            .to_request(Client::new().request(reqwest::Method::GET, "http://localhost"));
+            .to_request(Client::new().request(reqwest::Method::GET, "http://localhost"))
+            .await;
 
         // Act
         let request = request.build().expect("Could not build request");
@@ -85,13 +104,12 @@ mod tests {
         assert_eq!(request.method(), reqwest::Method::GET);
     }
 
-    #[test]
-    fn test_request_type_to_request_json() {
+    #[tokio::test]
+    async fn test_request_type_to_request_json() {
         // Arrange
-        let request = RequestType::JSON {
-            body: "{}".to_string(),
-        }
-        .to_request(Client::new().request(reqwest::Method::GET, "http://localhost"));
+        let request = RequestType::JSON { body: "{}".to_string() }
+            .to_request(Client::new().request(reqwest::Method::GET, "http://localhost"))
+            .await;
 
         // Act
         let request = request.build().expect("Could not build request");
@@ -113,11 +131,12 @@ mod tests {
         );
     }
 
-    #[test]
-    fn test_request_type_to_request_form() {
+    #[tokio::test]
+    async fn test_request_type_to_request_form() {
         // Arrange
         let context = RequestType::Multipart {
             bodies: Some(HashMap::from([("body".to_string(), "{}".to_string())])),
+            callbacks: None,
             files: Some(HashMap::from([(
                 "file".to_string(),
                 "tests/fixtures/file.txt".to_string(),
@@ -125,7 +144,8 @@ mod tests {
         };
 
         let request =
-            context.to_request(Client::new().request(reqwest::Method::GET, "http://localhost"));
+            context.to_request(Client::new().request(reqwest::Method::GET, "http://localhost"))
+                .await;
 
         // Act
         let request = request.build().expect("Could not build request");

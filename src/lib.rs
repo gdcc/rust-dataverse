@@ -1,9 +1,10 @@
 pub mod client;
 pub mod identifier;
-pub mod progressbar;
+pub mod filewrapper;
 pub mod request;
 pub mod response;
 pub mod utils;
+pub mod callback;
 
 pub mod native_api {
     pub mod collection {
