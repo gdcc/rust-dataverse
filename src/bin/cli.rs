@@ -1,11 +1,14 @@
+use std::error::Error;
+
 use colored::Colorize;
+use structopt::StructOpt;
+
 use dataverse::cli::base::Matcher;
 use dataverse::cli::collection::CollectionSubCommand;
 use dataverse::cli::dataset::DatasetSubCommand;
 use dataverse::cli::file::FileSubCommand;
 use dataverse::cli::info::InfoSubCommand;
 use dataverse::client::BaseClient;
-use structopt::StructOpt;
 
 static HEADER: &str = r#"
 --- Dataverse Command Line Interface (DVCLI) ---
@@ -24,10 +27,7 @@ enum DVCLI {
 }
 
 fn main() {
-    let (base_url, api_token) = extract_config_from_env()
-        .expect("Please set the DVCLI_URL and DVCLI_TOKEN environment variables.");
-
-    let client = BaseClient::new(&base_url, api_token.as_ref()).expect("Failed to create client.");
+    let client = setup_client().expect("Failed to set up client.");
     let dvcli = DVCLI::from_args();
 
     if atty::is(atty::Stream::Stdout) {
@@ -42,10 +42,22 @@ fn main() {
     }
 }
 
+fn setup_client() -> Result<BaseClient, Box<dyn Error>> {
+    let (base_url, api_token) = extract_config_from_env();
+    let client = BaseClient::new(&base_url, api_token.as_ref())?;
+    Ok(client)
+}
+
 // This function extracts the base URL and API token from the environment
 // variables DVCLI_URL and DVCLI_TOKEN, respectively.
-fn extract_config_from_env() -> Option<(String, Option<String>)> {
-    let base_url = std::env::var("DVCLI_URL").ok()?;
+fn extract_config_from_env() -> (String, Option<String>) {
+    let base_url = std::env::var("DVCLI_URL").ok();
     let api_token = std::env::var("DVCLI_TOKEN").ok();
-    Some((base_url, api_token))
+
+    // If there is no base URL, return None
+    if base_url.is_none() {
+        panic!("No base URL provided. Please set the DVCLI_URL environment variable.");
+    }
+
+    (base_url.unwrap(), api_token)
 }
