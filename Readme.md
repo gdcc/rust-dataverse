@@ -31,7 +31,7 @@ Current capabilities include:
 - **Create**: Create a new dataset within a collection.
 - **Edit**: Modify an existing dataset.
 - **Delete**: Delete an unpublished dataset.
-- **Upload**: Upload files to a dataset.
+- **Upload**: Upload a file to a dataset.
 - **Publish**: Publish a dataset to make it publicly available.
 - **Link**: Link datasets to other collections.
 
