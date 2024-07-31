@@ -248,7 +248,7 @@ mod tests {
             )])),
             files: Some(HashMap::from([(
                 "file".to_string(),
-                "tests/fixtures/file.txt".to_string(),
+                "tests/fixtures/file.txt".into(),
             )])),
             callbacks: None,
         };

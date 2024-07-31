@@ -42,7 +42,7 @@ impl Matcher for FileSubCommand {
             } => {
                 let body = prepare_replace_body(body, force);
                 let response =
-                    runtime.block_on(replace::replace_file(client, id, &path.to_str().unwrap().to_string(), &body, None));
+                    runtime.block_on(replace::replace_file(client, id, path.clone(), &body, None));
 
                 evaluate_and_print_response(response);
             }

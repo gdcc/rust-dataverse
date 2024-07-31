@@ -13,7 +13,7 @@ use crate::native_api::dataset::link;
 use crate::native_api::dataset::publish::{self, Version};
 use crate::native_api::dataset::upload::{self, UploadBody};
 
-use super::base::{evaluate_and_print_response, parse_file, Matcher};
+use super::base::{evaluate_and_print_response, Matcher, parse_file};
 
 #[derive(StructOpt, Debug)]
 #[structopt(about = "Handle datasets of the Dataverse instance")]
@@ -104,32 +104,36 @@ impl Matcher for DatasetSubCommand {
         let runtime = tokio::runtime::Runtime::new().unwrap();
         match self {
             DatasetSubCommand::Get { id } => {
-                let response = runtime.block_on(get::get_dataset_meta(client, id));
+                let response = runtime.block_on(get::get_dataset_meta(client, id.clone()));
                 evaluate_and_print_response(response);
             }
             DatasetSubCommand::Create { collection, body } => {
                 let body: DatasetCreateBody =
                     parse_file::<_, DatasetCreateBody>(body).expect("Failed to parse the file");
-                let response = runtime.block_on(create::create_dataset(client, &collection, &body));
+                let response = runtime
+                    .block_on(create::create_dataset(client, collection, body.clone()));
                 evaluate_and_print_response(response);
             }
             DatasetSubCommand::Publish { pid, version } => {
-                let response = runtime.block_on(publish::publish_dataset(client, &pid, version));
+                let response = runtime
+                    .block_on(publish::publish_dataset(client, pid, version.clone()));
                 evaluate_and_print_response(response);
             }
             DatasetSubCommand::Delete { id } => {
-                let response = runtime.block_on(delete::delete_dataset(client, id));
+                let response = runtime
+                    .block_on(delete::delete_dataset(client, id));
                 evaluate_and_print_response(response);
             }
             DatasetSubCommand::Edit { pid, body, replace } => {
-                let body =
-                    parse_file::<_, EditMetadataBody>(body).expect("Failed to parse the file");
-                let response =
-                    runtime.block_on(edit::edit_dataset_metadata(client, &pid, replace, &body));
+                let body = parse_file::<_, EditMetadataBody>(body)
+                    .expect("Failed to parse the file");
+                let response = runtime
+                    .block_on(edit::edit_dataset_metadata(client, pid, replace, body.clone()));
                 evaluate_and_print_response(response);
             }
             DatasetSubCommand::Link { id, collection } => {
-                let response = runtime.block_on(link::link_dataset(client, id, collection));
+                let response = runtime
+                    .block_on(link::link_dataset(client, id.clone(), collection));
                 evaluate_and_print_response(response);
             }
             DatasetSubCommand::Upload { id, path, body } => {
@@ -139,9 +143,9 @@ impl Matcher for DatasetSubCommand {
 
                 let response = runtime.block_on(upload::upload_file_to_dataset(
                     client,
-                    id,
-                    &path.to_str().unwrap().to_string(),
-                    &body,
+                    id.clone(),
+                    path.to_str().unwrap().into(),
+                    body.clone(),
                     None,
                 ));
 

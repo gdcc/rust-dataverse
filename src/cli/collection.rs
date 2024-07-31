@@ -50,25 +50,25 @@ impl Matcher for CollectionSubCommand {
         let runtime = Runtime::new().unwrap();
         match self {
             CollectionSubCommand::Content { alias } => {
-                let response = 
-                    runtime.block_on(content::get_collection_content(client, alias));
+                let response =
+                    runtime.block_on(content::get_content(client, alias));
                 evaluate_and_print_response(response);
             }
             CollectionSubCommand::Create { parent, body } => {
                 let body: CollectionCreateBody =
                     parse_file::<_, CollectionCreateBody>(body).expect("Failed to parse the file");
                 let response =
-                    runtime.block_on(create::create_collection(client, &parent, &body));
+                    runtime.block_on(create::create_collection(client, parent.as_str(), body));
                 evaluate_and_print_response(response);
             }
             CollectionSubCommand::Publish { alias } => {
                 let response =
-                    runtime.block_on(publish::publish_collection(client, &alias));
+                    runtime.block_on(publish::publish_collection(client, alias.as_str()));
                 evaluate_and_print_response(response);
             }
             CollectionSubCommand::Delete { alias } => {
                 let response =
-                    runtime.block_on(delete::delete_collection(client, &alias));
+                    runtime.block_on(delete::delete_collection(client, alias));
                 evaluate_and_print_response(response);
             }
         };
