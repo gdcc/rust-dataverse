@@ -6,14 +6,6 @@ pub mod request;
 pub mod response;
 pub mod utils;
 pub mod callback;
-pub mod directupload {
-    pub use register::register_file;
-    // Re-export the direct upload API modules
-        pub use tickets::get_tickets;
-
-    pub mod tickets;
-    pub mod register;
-}
 
 pub mod native_api {
     pub mod collection {
