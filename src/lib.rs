@@ -53,7 +53,6 @@ pub mod native_api {
 pub mod prelude {
     pub use super::callback::CallbackFun;
     pub use super::client::BaseClient;
-    pub use super::directupload;
     pub use super::identifier::Identifier;
     pub use super::native_api::collection;
     pub use super::native_api::dataset;
