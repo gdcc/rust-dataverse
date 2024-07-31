@@ -13,11 +13,10 @@ pub enum Status {
 
 impl PartialEq for Status {
     fn eq(&self, other: &Self) -> bool {
-        match (self, other) {
-            (Status::OK, Status::OK) => true,
-            (Status::ERROR, Status::ERROR) => true,
-            _ => false,
-        }
+        matches!(
+            (self, other),
+            (Status::OK, Status::OK) | (Status::ERROR, Status::ERROR)
+        )
     }
 }
 
@@ -33,6 +32,13 @@ impl Status {
         match self {
             Status::OK => true,
             Status::ERROR => false,
+        }
+    }
+
+    pub fn is_err(&self) -> bool {
+        match self {
+            Status::OK => false,
+            Status::ERROR => true,
         }
     }
 }
@@ -130,4 +136,84 @@ impl std::fmt::Display for Message {
 pub struct NestedMessage {
     #[serde(skip_serializing_if = "Option::is_none")]
     message: Option<String>,
+}
+
+impl std::fmt::Display for NestedMessage {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}", self.message.as_ref().unwrap())
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn test_status_eq() {
+        let ok = super::Status::OK;
+        let error = super::Status::ERROR;
+
+        assert_eq!(ok, ok);
+        assert_eq!(error, error);
+        assert_ne!(ok, error);
+    }
+
+    #[test]
+    fn test_status_as_str() {
+        let ok = super::Status::OK;
+        let error = super::Status::ERROR;
+
+        assert_eq!(ok.as_str(), "OK");
+        assert_eq!(error.as_str(), "ERROR");
+    }
+
+    #[test]
+    fn test_status_is_ok() {
+        let ok = super::Status::OK;
+        let error = super::Status::ERROR;
+
+        assert!(ok.is_ok());
+        assert!(!error.is_ok());
+    }
+
+    #[test]
+    fn test_status_is_err() {
+        let ok = super::Status::OK;
+        let error = super::Status::ERROR;
+
+        assert!(!ok.is_err());
+        assert!(error.is_err());
+    }
+
+    #[test]
+    fn test_response_print_result() {
+        let response = super::Response {
+            status: super::Status::OK,
+            data: Some("data"),
+            message: None,
+            requestUrl: None,
+            requestMethod: None,
+        };
+
+        response.print_result();
+    }
+
+    #[test]
+    fn test_message_display() {
+        let plain_message = super::Message::PlainMessage("plain message".to_string());
+        let nested_message = super::Message::NestedMessage(super::NestedMessage {
+            message: Some("nested message".to_string()),
+        });
+
+        assert_eq!(format!("{}", plain_message), "plain message");
+        assert_eq!(format!("{}", nested_message), "nested message");
+    }
+
+    #[test]
+    fn test_nested_message_display() {
+        let nested_message = super::NestedMessage {
+            message: Some("nested message".to_string()),
+        };
+
+        assert_eq!(format!("{}", nested_message), "nested message");
+    }
 }
