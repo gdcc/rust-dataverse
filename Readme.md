@@ -113,11 +113,9 @@ various operations.
 ## ToDo's
 
 - [ ] Implement remaining API endpoints
-- [ ] Write unit and integration tests
-- [ ] Asynchronous support using `tokio`
-- [ ] Local storage of credentials using `keyring` crate
-- [ ] Python bindings using `PyO3`
-- [ ] Documentation
+- [x] Write unit and integration tests
+- [x] Asynchronous support using `tokio`
+- [x] Documentation
 - [ ] Publish on crates.io
-- [ ] Continuous integration
+- [x] Continuous integration
 - [ ] Validate before upload using `/api/dataverses/$ID/validateDatasetJson`
