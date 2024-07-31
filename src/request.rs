@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::path::PathBuf;
 use std::sync::Arc;
 
 use indicatif::MultiProgress;
@@ -21,7 +22,7 @@ pub enum RequestType {
     // A multipart request with a body and files
     Multipart {
         bodies: Option<HashMap<String, String>>,
-        files: Option<HashMap<String, String>>,
+        files: Option<HashMap<String, PathBuf>>,
         callbacks: Option<HashMap<String, CallbackFun>>,
     },
 }
@@ -50,7 +51,7 @@ impl RequestType {
 
     async fn build_form_request(
         bodies: &Option<HashMap<String, String>>,
-        files: &Option<HashMap<String, String>>,
+        files: &Option<HashMap<String, PathBuf>>,
         request: RequestBuilder,
         callbacks: Option<HashMap<String, CallbackFun>>,
     ) -> RequestBuilder {
@@ -139,7 +140,7 @@ mod tests {
             callbacks: None,
             files: Some(HashMap::from([(
                 "file".to_string(),
-                "tests/fixtures/file.txt".to_string(),
+                "tests/fixtures/file.txt".into(),
             )])),
         };
 
