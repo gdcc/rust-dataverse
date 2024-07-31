@@ -2,14 +2,14 @@
   "fields": [
     {
       "typeName": "subject",
-      "value": ["Astronomy and Astrophysics"]
+      "value": [
+        "Astronomy and Astrophysics"
+      ]
     },
-
     {
       "typeName": "subtitle",
       "value": "More Birds and Trees"
     },
-
     {
       "typeName": "title",
       "value": "Changed title"
