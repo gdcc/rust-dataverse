@@ -43,7 +43,7 @@ mod tests {
             .expect("Could not parse body");
 
         // Act
-        let response = create_collection(&client, &parent, &body)
+        let response = create_collection(&client, &parent, body)
             .await
             .expect("Could not create collection");
 
@@ -51,14 +51,14 @@ mod tests {
         assert_eq!(response.status, Status::OK);
 
         // Part 2: Publish the collection
-        let response = publish_collection(&client, &"test_create_collection".to_string())
+        let response = publish_collection(&client, "test_create_collection")
             .await
             .expect("Could not publish collection");
 
         assert_eq!(response.status, Status::OK, "Publish collection failed");
 
         // Part 2: Delete the collection
-        let response = delete_collection(&client, &"test_create_collection".to_string())
+        let response = delete_collection(&client, "test_create_collection")
             .await
             .expect("Could not delete collection");
 

@@ -29,7 +29,7 @@ mod tests {
         let body = serde_json::from_str::<DatasetCreateBody>(&body);
 
         // Act
-        let response = dataset::create::create_dataset(&client, &"Root".to_string(), &body.unwrap())
+        let response = dataset::create::create_dataset(&client, &"Root".to_string(), body.unwrap())
             .await
             .expect("Could not create dataset");
 
@@ -65,7 +65,7 @@ mod tests {
         let body = serde_json::from_str::<DatasetCreateBody>(&body);
 
         // Act
-        let response = dataset::create::create_dataset(&client, &"Root".to_string(), &body.unwrap())
+        let response = dataset::create::create_dataset(&client, &"Root".to_string(), body.unwrap())
             .await
             .expect("Could not create dataset");
 
@@ -86,7 +86,7 @@ mod tests {
         let response = dataset::publish::publish_dataset(
             &client,
             &dataset_id,
-            &dataset::publish::Version::Major,
+            dataset::publish::Version::Major,
         )
             .await
             .expect("Could not publish dataset");
@@ -109,7 +109,7 @@ mod tests {
 
         let body = serde_json::from_str::<DatasetCreateBody>(&body);
         let response =
-            dataset::create::create_dataset(&client, &"Root".to_string(), &body.unwrap())
+            dataset::create::create_dataset(&client, &"Root".to_string(), body.unwrap())
                 .await
                 .expect("Could not create dataset");
 
@@ -122,9 +122,9 @@ mod tests {
         let dataset_id = Identifier::PersistentId(dataset_id);
         let response = dataset::upload::upload_file_to_dataset(
             &client,
-            &dataset_id,
-            &"tests/fixtures/create_dataset_body.json".to_string(),
-            &None,
+            dataset_id,
+            "tests/fixtures/create_dataset_body.json".into(),
+            None,
             None,
         )
             .await
