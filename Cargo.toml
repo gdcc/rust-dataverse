@@ -29,3 +29,4 @@ path = "src/bin/cli.rs"
 [dev-dependencies]
 httpmock = "0.7.0"
 lazy_static = "1.4.0"
+rand = "0.9.0-alpha.1"
