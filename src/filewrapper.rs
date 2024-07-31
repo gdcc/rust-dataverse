@@ -1,4 +1,5 @@
 use std::fmt::Write as FmtWrite;
+use std::path::PathBuf;
 use std::sync::Arc;
 
 use bytes::Bytes;
@@ -12,7 +13,7 @@ use tokio_util::io::ReaderStream;
 use crate::callback::CallbackFun;
 
 pub async fn create_multipart(
-    file_path: &str,
+    file_path: &PathBuf,
     multi_pb: Arc<MultiProgress>,
     callback: Option<CallbackFun>,
 ) -> Result<Part, Box<dyn std::error::Error>> {
@@ -45,9 +46,12 @@ pub async fn create_multipart(
 
     // Create a multipart part
     let filename = file_path
+        .to_str()
+        .expect("The file path is invalid.")
         .rsplit('/')
         .next()
         .expect("The file path is invalid.");
+
     let part = Part::stream(reqwest::Body::wrap_stream(stream))
         .file_name(filename.to_string())
         .mime_str("application/octet-stream")?;
