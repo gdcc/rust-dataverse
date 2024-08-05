@@ -1,3 +1,4 @@
+use std::fmt::Display;
 use std::str::FromStr;
 
 use serde::{Deserialize, Serialize};
@@ -27,6 +28,16 @@ impl FromStr for Identifier {
             Ok(_) => Ok(Identifier::Id(s.parse::<i64>().unwrap())),
             Err(_) => Ok(Identifier::PersistentId(s.to_owned())),
         }
+    }
+}
+
+impl Display for Identifier {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let str = match self {
+            Identifier::Id(id) => id.to_string(),
+            Identifier::PersistentId(pid) => pid.to_owned(),
+        };
+        write!(f, "{}", str)
     }
 }
 
