@@ -13,20 +13,29 @@ pub struct BaseClient {
     base_url: Url,
     api_token: Option<String>,
     client: Client,
+    headers: HashMap<String, String>,
 }
 
 // This is the base client that will be used to make requests to the API.
 // Its acts as a wrapper around the reqwest::blocking::Client and provides
 // methods to make GET, POST, PUT, and DELETE requests.
 impl BaseClient {
-    pub fn new(base_url: &String, api_token: Option<&String>) -> Result<Self, reqwest::Error> {
+    pub fn new(
+        base_url: &String,
+        api_token: Option<&String>,
+    ) -> Result<Self, reqwest::Error> {
         let base_url = Url::parse(base_url).unwrap();
         let client = Client::new();
         Ok(BaseClient {
             base_url,
             api_token: api_token.map(|s| s.to_owned().to_string()),
             client,
+            headers: HashMap::new(),
         })
+    }
+
+    pub fn add_header(&mut self, key: &str, value: &str) {
+        self.headers.insert(key.to_string(), value.to_string());
     }
 
     pub async fn get(
@@ -147,7 +156,7 @@ fn print_call(url: String) {
         println!(
             "{}: {}",
             "Calling".to_string().blue().bold(),
-            url.to_string()
+            url
         );
     }
 }
