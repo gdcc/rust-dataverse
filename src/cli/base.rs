@@ -29,10 +29,10 @@ where
 {
     let value = matches
         .get_one::<U>(arg_name)
-        .expect(&format!("{} is required.", arg_name))
+        .unwrap_or_else(|| panic!("{} is required.", arg_name))
         .as_ref()
         .parse::<T>()
-        .expect(&format!("{} is invalid.", arg_name));
+        .unwrap_or_else(|_| panic!("{} is invalid.", arg_name));
 
     value
 }
