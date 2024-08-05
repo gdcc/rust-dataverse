@@ -1,0 +1,32 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "type": "object",
+  "title": "TicketResponse",
+  "properties": {
+    "url": {
+      "type": "string",
+      "format": "uri"
+    },
+    "urls": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string",
+        "format": "uri"
+      }
+    },
+    "storageIdentifier": {
+      "type": "string"
+    },
+    "partSize": {
+      "type": "integer"
+    },
+    "abort": {
+      "type": "string",
+      "format": "uri"
+    },
+    "complete": {
+      "type": "string",
+      "format": "uri"
+    }
+  }
+}
