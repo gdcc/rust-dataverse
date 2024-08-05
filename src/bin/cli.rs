@@ -19,7 +19,7 @@ static HEADER: &str = r#"
 // and are processed here.
 #[derive(StructOpt, Debug)]
 #[structopt(about = "CLI to interact with Dataverse")]
-enum DVCLI {
+enum Dvcli {
     Info(InfoSubCommand),
     Collection(CollectionSubCommand),
     Dataset(DatasetSubCommand),
@@ -28,17 +28,17 @@ enum DVCLI {
 
 fn main() {
     let client = setup_client().expect("Failed to set up client.");
-    let dvcli = DVCLI::from_args();
+    let dvcli = Dvcli::from_args();
 
     if atty::is(atty::Stream::Stdout) {
         println!("{}", HEADER.bold());
     }
 
     match dvcli {
-        DVCLI::Info(command) => command.process(&client),
-        DVCLI::Collection(command) => command.process(&client),
-        DVCLI::Dataset(command) => command.process(&client),
-        DVCLI::File(command) => command.process(&client),
+        Dvcli::Info(command) => command.process(&client),
+        Dvcli::Collection(command) => command.process(&client),
+        Dvcli::Dataset(command) => command.process(&client),
+        Dvcli::File(command) => command.process(&client),
     }
 }
 
