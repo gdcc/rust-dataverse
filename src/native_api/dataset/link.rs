@@ -61,7 +61,7 @@ pub async fn link_dataset(
     // Determine dataset id
     let dataset_id = match id {
         Identifier::PersistentId(_) => get_dataset_id(client, id).await?,
-        Identifier::Id(id) => id.clone(),
+        Identifier::Id(id) => id,
     };
 
     // Endpoint metadata

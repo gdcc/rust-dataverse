@@ -45,7 +45,7 @@ import_types!(
 /// let base_url = "https://demo.dataverse.com".to_string();
 /// let client = BaseClient::new(&base_url, Some(&api_token))
 ///     .expect("Failed to create client");
-/// 
+///
 /// let pid = "persistentId123";
 /// let replace = true;
 /// let body = dataset::edit::EditMetadataBody {
@@ -55,7 +55,7 @@ import_types!(
 /// };
 ///
 /// let response = dataset::edit_dataset_metadata(&client, pid, &replace, body).await?;
-/// 
+///
 /// println!("Dataset metadata updated: {:?}", response);
 /// # Ok(())
 /// # }
@@ -80,7 +80,7 @@ pub async fn edit_dataset_metadata(
 
     // Send request
     let context = RequestType::JSON { body: body.clone() };
-    let response = client.put(&url, parameters, &context).await;
+    let response = client.put(url, parameters, &context).await;
 
     evaluate_response::<Dataset>(response).await
 }
