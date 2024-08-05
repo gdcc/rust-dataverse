@@ -1,8 +1,11 @@
+use std::io::Write;
 use std::path::PathBuf;
 
 use structopt::StructOpt;
 
 use crate::client::BaseClient;
+use crate::directupload;
+use crate::directupload::register::DirectUploadBody;
 use crate::identifier::Identifier;
 use crate::native_api::dataset::create::{self, DatasetCreateBody};
 use crate::native_api::dataset::delete;
@@ -59,7 +62,7 @@ pub enum DatasetSubCommand {
 
     #[structopt(about = "Edit the metadata of a dataset")]
     Edit {
-        #[structopt(long, short, help = "Perisistent identifier of the dataset to edit")]
+        #[structopt(long, short, help = "Persistent identifier of the dataset to edit")]
         pid: String,
 
         #[structopt(
@@ -96,6 +99,12 @@ pub enum DatasetSubCommand {
 
         #[structopt(long, help = "Path to the JSON/YAML file containing the file body")]
         body: Option<PathBuf>,
+
+        #[structopt(short, long, help = "Whether to upload the file directly to S3 or not")]
+        direct: bool,
+
+        #[structopt(long, help = "Will generate an example file body to fill out")]
+        gen: bool,
     },
 }
 
@@ -136,21 +145,110 @@ impl Matcher for DatasetSubCommand {
                     .block_on(link::link_dataset(client, id.clone(), collection));
                 evaluate_and_print_response(response);
             }
-            DatasetSubCommand::Upload { id, path, body } => {
-                let body = body.as_ref().map(|body| {
-                    parse_file::<_, UploadBody>(body).expect("Failed to parse the file")
-                });
+            DatasetSubCommand::Upload {
+                id,
+                path,
+                body,
+                direct,
+                gen
+            } => {
+                match direct {
+                    true => {
+                        if *gen {
+                            generate_example_direct_upload_body();
+                            return;
+                        }
 
-                let response = runtime.block_on(upload::upload_file_to_dataset(
-                    client,
-                    id.clone(),
-                    path.to_str().unwrap().into(),
-                    body.clone(),
-                    None,
-                ));
+                        let body = body.as_ref().map(|body| {
+                            parse_file::<_, DirectUploadBody>(body)
+                                .expect("Failed to parse the file")
+                        }).unwrap();
 
-                evaluate_and_print_response(response);
+                        if let Identifier::Id(_) = id {
+                            panic!("Direct upload requires a persistent identifier, not an id");
+                        }
+
+                        let pid = id.to_string();
+                        let response = runtime.block_on(directupload::direct_upload(
+                            client,
+                            path.clone(),
+                            &pid,
+                            None,
+                            body.clone(),
+                        ));
+
+                        evaluate_and_print_response(response.map_err(|e| e.to_string()));
+                    }
+                    false => {
+                        if *gen {
+                            generate_example_upload_body();
+                            return;
+                        }
+
+                        let body = body.as_ref().map(|body| {
+                            parse_file::<_, UploadBody>(body).expect("Failed to parse the file")
+                        });
+                        let response = runtime.block_on(upload::upload_file_to_dataset(
+                            client,
+                            id.clone(),
+                            path.to_str().unwrap().into(),
+                            body.clone(),
+                            None,
+                        ));
+
+                        evaluate_and_print_response(response);
+                    }
+                }
             }
         };
     }
+}
+
+
+fn generate_example_upload_body() {
+    let example = UploadBody {
+        categories: vec!["Some category".to_string()],
+        checksum: None,
+        content_type: None,
+        creation_date: None,
+        description: "Some description".to_string().into(),
+        directory_label: "some/path".to_string().into(),
+        file_access_request: None,
+        filename: "filename".to_string().into(),
+        filesize: None,
+        force_replace: false.into(),
+        friendly_type: None,
+        id: None,
+        md5: None,
+        persistent_id: None,
+        root_data_file_id: None,
+        storage_identifier: None,
+        tabular_data: None,
+    };
+
+    let example = serde_json::to_string_pretty(&example).unwrap();
+
+    // Write the example to a file
+    let mut file = std::fs::File::create("body.json").unwrap();
+    file.write_all(example.as_bytes()).unwrap();
+}
+
+
+fn generate_example_direct_upload_body() {
+    let example = DirectUploadBody {
+        categories: vec!["Some category".to_string()],
+        checksum: None,
+        description: "Some description".to_string().into(),
+        directory_label: "some/path".to_string().into(),
+        file_name: None,
+        mime_type: "text/plain".to_string().into(),
+        restrict: false.into(),
+        storage_identifier: None,
+    };
+    
+    let example = serde_json::to_string_pretty(&example).unwrap();
+
+    // Write the example to a file
+    let mut file = std::fs::File::create("body.json").unwrap();
+    file.write_all(example.as_bytes()).unwrap();
 }
