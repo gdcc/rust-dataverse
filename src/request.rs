@@ -6,7 +6,7 @@ use indicatif::MultiProgress;
 use reqwest::{multipart, RequestBuilder};
 
 use crate::callback::CallbackFun;
-use crate::filewrapper::create_multipart;
+use crate::filewrapper::{create_multipart, create_singlepart};
 
 // We distinguish between three types of requests: plain, JSON, and multipart
 pub enum RequestType {
@@ -25,6 +25,12 @@ pub enum RequestType {
         files: Option<HashMap<String, PathBuf>>,
         callbacks: Option<HashMap<String, CallbackFun>>,
     },
+
+    // A file request with a single file
+    File {
+        file: PathBuf,
+        callback: Option<CallbackFun>,
+    },
 }
 
 impl RequestType {
@@ -37,9 +43,11 @@ impl RequestType {
                 bodies,
                 files,
                 callbacks
-            } => {
-                Self::build_form_request(bodies, files, request, callbacks.clone()).await
-            }
+            } => { Self::build_form_request(bodies, files, request, callbacks.clone()).await }
+            RequestType::File {
+                file,
+                callback
+            } => { Self::build_file_request(request, file, callback.clone()).await }
         }
     }
 
@@ -80,6 +88,19 @@ impl RequestType {
         }
 
         request.multipart(form)
+    }
+
+    async fn build_file_request(
+        request: RequestBuilder,
+        file_path: &PathBuf,
+        callback: Option<CallbackFun>,
+    ) -> RequestBuilder {
+        let multi_pb = Arc::new(MultiProgress::new());
+        let body = create_singlepart(file_path, multi_pb, callback)
+            .await
+            .expect("The progress bar could not be created. Please check the file path.");
+
+        request.body(body)
     }
 }
 
