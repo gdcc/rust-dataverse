@@ -161,8 +161,8 @@ impl Matcher for DatasetSubCommand {
 
                         let body = body.as_ref().map(|body| {
                             parse_file::<_, DirectUploadBody>(body)
-                                .expect("Failed to parse the file")
-                        }).unwrap();
+                                .expect("Failed to parse the body for this request")
+                        }).expect("Failed to parse the body for this request");
 
                         if let Identifier::Id(_) = id {
                             panic!("Direct upload requires a persistent identifier, not an id");
