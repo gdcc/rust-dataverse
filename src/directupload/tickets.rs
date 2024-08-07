@@ -16,6 +16,20 @@ import_types!(
     struct_builder=true,
 );
 
+/// Retrieves an upload ticket for a file.
+///
+/// This asynchronous function sends a request to the server to obtain an upload ticket
+/// for a file, which includes metadata such as the file size and project ID.
+///
+/// # Arguments
+///
+/// * `client` - A reference to the `BaseClient` used for making API requests.
+/// * `pid` - A string slice representing the project ID.
+/// * `size` - The size of the file in bytes.
+///
+/// # Returns
+///
+/// A `Result` wrapping a `Response<TicketResponse>` if the request is successful, or a `String` error message if it fails.
 pub async fn get_ticket(
     client: &BaseClient,
     pid: &str,
@@ -36,6 +50,23 @@ pub async fn get_ticket(
     evaluate_response::<TicketResponse>(response).await
 }
 
+/// Processes an upload ticket and uploads the file.
+///
+/// This asynchronous function performs the following steps:
+/// 1. Unwraps the ticket data to retrieve the storage identifier.
+/// 2. Checks if the ticket is for a multipart upload.
+/// 3. If not multipart, performs a single-part upload of the file.
+/// 4. Returns the storage identifier if the upload is successful.
+///
+/// # Arguments
+///
+/// * `ticket` - A `Response<TicketResponse>` containing the upload ticket data.
+/// * `filepath` - A reference to a `Path` representing the path to the file to be uploaded.
+/// * `callback` - An optional `CallbackFun` instance for handling callbacks during the upload process.
+///
+/// # Returns
+///
+/// A `Result` wrapping an `Option<String>` containing the storage identifier if the upload is successful, or an error if it fails.
 pub async fn process_ticket(
     ticket: Response<TicketResponse>,
     filepath: &Path,
@@ -49,7 +80,6 @@ pub async fn process_ticket(
     if !is_multipart(&ticket) {
         single_part_upload(ticket, filepath, callback)
             .await?;
-
         Ok(storage_identifier)
     } else {
         Err("Multipart upload not supported yet".into())
@@ -60,15 +90,38 @@ fn is_multipart(ticket: &TicketResponse) -> bool {
     ticket.url.is_none()
 }
 
+/// Uploads a file to S3 in a single part.
+///
+/// This asynchronous function performs the following steps:
+/// 1. Creates a new `BaseClient` using the URL from the ticket.
+/// 2. Adds necessary headers to the client, including the file size and tagging information.
+/// 3. Constructs a `RequestType::File` context with the file path and optional callback function.
+/// 4. Sends a PUT request to upload the file to S3.
+///
+/// # Arguments
+///
+/// * `ticket` - A `TicketResponse` containing the upload ticket data.
+/// * `filepath` - A reference to a `Path` representing the path to the file to be uploaded.
+/// * `callback_fun` - An optional `CallbackFun` instance for handling callbacks during the upload process.
+///
+/// # Returns
+///
+/// A `Result` indicating success or failure. On success, returns `Ok(())`. On failure, returns an error wrapped in a `Box<dyn std::error::Error>`.
 async fn single_part_upload(
     ticket: TicketResponse,
     filepath: &Path,
     callback_fun: Option<CallbackFun>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let client = BaseClient::new(
-        &ticket.url.unwrap().replace("localstack", "localhost"),
+    let url = parse_s3_url(ticket.url);
+    let mut client = BaseClient::new(
+        &url,
         None,
     )?;
+
+    // Add the headers to the client
+    let file_size = std::fs::metadata(filepath)?.len();
+    client.add_header("x-amz-tagging", "dv-state=temp");
+    client.add_header("Content-Length", file_size.to_string().as_str());
 
     let context = RequestType::File {
         file: filepath.to_path_buf(),
@@ -81,6 +134,20 @@ async fn single_part_upload(
     }
 }
 
+
+fn parse_s3_url(url: Option<String>) -> String {
+    let mut url = url.expect("S3 URL should not be None");
+
+    // While testing, the URL might start with "http://localstack"
+    // due to DV using the Docker-URL for localstack which is not
+    // accessible from the host machine. Turning it into "localhost"
+    // makes it accessible.
+    if url.starts_with("http://localstack") {
+        url = url.replace("http://localstack", "http://localhost");
+    }
+
+    url
+}
 
 #[cfg(test)]
 mod tests {
