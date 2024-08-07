@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use atty::Stream;
 use colored::Colorize;
 use reqwest::Client;
+use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
 use reqwest::Url;
 use serde::Deserialize;
 
@@ -13,7 +14,7 @@ pub struct BaseClient {
     base_url: Url,
     api_token: Option<String>,
     client: Client,
-    headers: HashMap<String, String>,
+    headers: HeaderMap,
 }
 
 // This is the base client that will be used to make requests to the API.
@@ -30,12 +31,15 @@ impl BaseClient {
             base_url,
             api_token: api_token.map(|s| s.to_owned().to_string()),
             client,
-            headers: HashMap::new(),
+            headers: HeaderMap::new(),
         })
     }
 
     pub fn add_header(&mut self, key: &str, value: &str) {
-        self.headers.insert(key.to_string(), value.to_string());
+        let header_name = HeaderName::from_bytes(key.as_bytes()).unwrap();
+        let header_value = HeaderValue::from_str(value).unwrap();
+
+        self.headers.insert(header_name, header_value);
     }
 
     pub async fn get(
@@ -99,13 +103,19 @@ impl BaseClient {
             None => request,
         };
 
-        print_call(url.to_string());
+        // Add the headers to the request
+        let mut headers = self.headers.clone();
 
-        // Add the API token if it exists
-        let request = match &self.api_token {
-            Some(api_token) => request.header("X-Dataverse-key", api_token),
-            None => request,
+        // Add API token to the headers
+        match &self.api_token {
+            Some(api_token) => headers.insert("X-Dataverse-key", api_token.parse().unwrap()),
+            None => None,
         };
+
+        // Add the headers to the request
+        let request = request.headers(headers);
+
+        print_call(url.to_string());
 
         request.send().await
     }
@@ -120,10 +130,10 @@ where
 {
     // Check if the response is an error
     let response = match response {
-        Ok(response) => response,
+        Ok(response) => { response }
         Err(err) => {
             print_error(err.to_string());
-            panic!();
+            panic!("{}", err.to_string());
         }
     };
 
