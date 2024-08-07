@@ -32,6 +32,7 @@ Current capabilities include:
 - **Edit**: Modify an existing dataset.
 - **Delete**: Delete an unpublished dataset.
 - **Upload**: Upload a file to a dataset.
+- **Direct S3 upload**: Upload a file directly to an S3 bucket.
 - **Publish**: Publish a dataset to make it publicly available.
 - **Link**: Link datasets to other collections.
 
