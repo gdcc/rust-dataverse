@@ -44,9 +44,7 @@ Current capabilities include:
 **Command line**
 
 ```bash
-git clone https://github.com/JR-1991/rust-dataverse.git
-cd rust-dataverse
-cargo install --path .
+cargo install --git https://github.com/JR-1991/rust-dataverse.git
 ```
 
 **Cargo.toml**
