@@ -43,19 +43,24 @@ Current capabilities include:
 
 **Command line**
 
+To install the command line tool, use `cargo:
+
 ```bash
 cargo install --git https://github.com/JR-1991/rust-dataverse.git
 ```
 
-**Cargo.toml**
+After installation, you can interact with the Dataverse API using the `dvcli` command. See usage examples bellow. Note that this command installs only the CLI tool, not the library itself. Instructions for adding the library to your project are provided below. You don't need to install the library in order to use the `dvcli` command line.
 
-Please note, this crate is not yet published on crates.io. You can add it to your `Cargo.toml` file by pointing to the
-GitHub repository.
+**Library**
+
+To include the library in your project, add this to your Cargo.toml file:
 
 ```toml
 [dependencies]
 dataverse = { git = "https://github.com/JR-1991/rust-dataverse" }
 ```
+
+Since the library isn’t published on [crates.io](https://crates.io) yet, we’re using a git dependency. Once added, you can begin using the library in your project.
 
 ## Usage
 
