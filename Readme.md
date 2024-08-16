@@ -49,7 +49,7 @@ To install the command line tool, use `cargo:
 cargo install --git https://github.com/JR-1991/rust-dataverse.git
 ```
 
-After installation, you can interact with the Dataverse API using the dvcli command. Note that this command installs only the CLI tool, not the library itself. Instructions for adding the library to your project are provided below.
+After installation, you can interact with the Dataverse API using the `dvcli` command. See usage examples bellow. Note that this command installs only the CLI tool, not the library itself. Instructions for adding the library to your project are provided below. You don't need to install the library in order to use the `dvcli` command line.
 
 **Library**
 
