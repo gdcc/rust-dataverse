@@ -11,11 +11,11 @@ jobs:
     env:
       PORT: 8080
     steps:
-      - name: "Checkout"
-        uses: "actions/checkout@v4"
+      - name: 'Checkout'
+        uses: 'actions/checkout@v4'
       - name: Run Dataverse Action
         id: dataverse
-        uses: gdcc/dataverse-action@main
+        uses: gdcc/dataverse-action@add-dev-stores
       - name: Build
         run: cargo build --verbose
       - name: Run tests
