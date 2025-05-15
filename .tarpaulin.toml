@@ -1,0 +1,8 @@
+[all]
+exclude-files = [
+    "src/bin/*",
+    "src/cli/*",
+]
+
+[report]
+out = ["Html", "Xml"]
