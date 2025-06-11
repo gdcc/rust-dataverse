@@ -9,6 +9,7 @@ use indicatif::ProgressBar;
 use lazy_static::lazy_static;
 use reqwest::{Body, Client, Url};
 use tokio::io::AsyncReadExt;
+use tokio::net::UnixListener;
 use tokio::{
     fs::File,
     io::{AsyncRead, AsyncSeekExt},
@@ -99,6 +100,9 @@ impl UploadFile {
             FileSource::ReceiverStream(stream) => {
                 Self::create_receiver_stream(callbacks, pb, stream)
             }
+            FileSource::UnixListener(listener) => {
+                Self::create_unix_listener_stream(callbacks, pb, listener)
+            }
             FileSource::File(mut file) => {
                 if let (Some(start), Some(end)) = (self.start, self.end) {
                     file.seek(SeekFrom::Start(start)).await?;
@@ -136,7 +140,10 @@ impl UploadFile {
     /// # Returns
     /// A `Result` containing a vector of `UploadFile`s or an error.
     pub async fn chunk_file(self, part_size: u64) -> Result<Vec<UploadFile>, Box<dyn Error>> {
-        if self.file.is_receiver_stream() || self.file.is_remote_url() {
+        if self.file.is_receiver_stream()
+            || self.file.is_remote_url()
+            || self.file.is_unix_listener()
+        {
             return Err("This method can only be used with File/Paths".into());
         }
 
@@ -186,6 +193,54 @@ impl UploadFile {
                     pb.inc(chunk.len() as u64);
                 }),
         ))
+    }
+
+    /// Creates a `Body` from a `UnixListener`.
+    ///
+    /// # Arguments
+    /// * `callback` - An optional callback function.
+    /// * `pb` - A progress bar to track the upload progress.
+    /// * `listener` - The `UnixListener` to be uploaded from.
+    ///
+    /// # Returns
+    /// A `Result` containing the `Body` or an error.
+    fn create_unix_listener_stream(
+        callbacks: Option<Vec<CallbackFun>>,
+        pb: ProgressBar,
+        listener: UnixListener,
+    ) -> Result<Body, Box<dyn Error>> {
+        use futures::stream;
+        use futures::StreamExt;
+
+        let callbacks_clone = callbacks.clone();
+        let pb_clone = pb.clone();
+
+        let stream = stream::unfold(listener, move |listener| {
+            let callbacks = callbacks_clone.clone();
+            let pb = pb_clone.clone();
+            async move {
+                match listener.accept().await {
+                    Ok((stream, _)) => {
+                        let framed_stream =
+                            FramedRead::with_capacity(stream, BytesCodec::new(), *BUFFER_SIZE)
+                                .map_ok(bytes::Bytes::from)
+                                .inspect_ok(move |chunk| {
+                                    if let Some(callbacks) = &callbacks {
+                                        for callback in callbacks {
+                                            callback.call(chunk);
+                                        }
+                                    }
+                                    pb.inc(chunk.len() as u64);
+                                });
+                        Some((framed_stream, listener))
+                    }
+                    Err(_) => None,
+                }
+            }
+        })
+        .flatten();
+
+        Ok(Body::wrap_stream(stream))
     }
 
     /// Creates a `Body` from a `File`.
@@ -288,6 +343,7 @@ impl UploadFile {
                 FileSource::Path(path) => Ok(std::fs::metadata(path).unwrap().len()),
                 FileSource::RemoteUrl(_) => Ok(0),
                 FileSource::ReceiverStream(_) => Ok(0),
+                FileSource::UnixListener(_) => Ok(0),
             }
         }
     }
@@ -446,6 +502,11 @@ pub enum FileSource {
     /// zip writer and you want to upload the output live to a dataset, you can use this
     /// type of file source.
     ReceiverStream(ReceiverStream<Vec<u8>>),
+
+    /// A `UnixStream` of file data.
+    ///
+    /// This type of file source is used to stream a file from a Unix socket.
+    UnixListener(UnixListener),
 
     /// A `File` of file data.
     ///
