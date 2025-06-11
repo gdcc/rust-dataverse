@@ -27,7 +27,7 @@ tokio-util = "0.7.11"
 bytes = "1.6.0"
 futures = "0.3.30"
 md5 = "0.7.0"
-tokio-stream = "0.1.16"
+tokio-stream = { version = "0.1.16", features = ["net"] }
 async_zip = { version = "0.0.17", features = ["tokio", "deflate"] }
 walkdir = "2.5.0"
 chrono = { version = "0.4.31", features = ["serde"] }
