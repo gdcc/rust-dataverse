@@ -491,6 +491,24 @@ impl From<ReceiverStream<Vec<u8>>> for UploadFile {
     }
 }
 
+impl From<UnixListener> for UploadFile {
+    /// Converts a `UnixListener` into an `UploadFile` instance.
+    ///
+    /// # Arguments
+    /// * `listener` - The `UnixListener` to convert.
+    ///
+    /// # Returns
+    /// A new `UploadFile` instance.
+    fn from(listener: UnixListener) -> Self {
+        Self::new(
+            "stream.dat".to_string(),
+            None,
+            FileSource::UnixListener(listener),
+            0,
+        )
+    }
+}
+
 /// An enum representing a source of file data, which can either be a `ReceiverStream`,
 /// a `File`, a `PathBuf`, or a `Url`.
 ///
