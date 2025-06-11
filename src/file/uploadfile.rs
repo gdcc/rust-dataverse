@@ -20,6 +20,8 @@ use tokio_util::codec::{BytesCodec, FramedRead};
 use variantly::Variantly;
 
 use crate::prelude::CallbackFun;
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+use std::sync::Arc;
 
 lazy_static! {
     static ref BUFFER_SIZE: usize = std::env::var("DVCLI_BUFFER_SIZE")
@@ -212,19 +214,82 @@ impl UploadFile {
     ) -> Result<Body, Box<dyn Error>> {
         let (tx, rx) = tokio::sync::mpsc::channel(100);
 
-        // Spawn background task to handle only the first connection
+        // Spawn another unix listener, that when called will introduce a cancellation
+        let finish_address = format!(
+            "{}.cancel",
+            listener
+                .local_addr()
+                .unwrap()
+                .as_pathname()
+                .unwrap()
+                .to_string_lossy()
+        );
+        let finish_listener = UnixListener::bind(finish_address).unwrap();
+
+        // Shared state for cancellation and connection tracking
+        let should_cancel = Arc::new(AtomicBool::new(false));
+        let active_connections = Arc::new(AtomicUsize::new(0));
+
+        // Clone references for the background task
+        let should_cancel_clone = Arc::clone(&should_cancel);
+        let active_connections_clone = Arc::clone(&active_connections);
+
+        // Spawn background task to handle connections concurrently
         tokio::spawn(async move {
             let mut incoming = UnixListenerStream::new(listener);
+            let mut finish_incoming = UnixListenerStream::new(finish_listener);
 
-            // Wait for the first connection only
-            if let Some(conn_result) = incoming.next().await {
-                if let Ok(stream) = conn_result {
-                    // Handle the first connection directly and wait for it to complete
-                    Self::connection_streamer(stream, tx.clone()).await;
+            loop {
+                tokio::select! {
+                    // Handle regular connections
+                    conn_result = incoming.next() => {
+                        match conn_result {
+                            Some(Ok(stream)) => {
+                                // Check if we should accept new connections
+                                if should_cancel_clone.load(Ordering::Relaxed) {
+                                    continue; // Don't accept new connections after cancellation
+                                }
+
+                                let tx_clone = tx.clone();
+                                let active_connections_clone2 = Arc::clone(&active_connections_clone);
+
+                                // Increment active connection count
+                                active_connections_clone2.fetch_add(1, Ordering::Relaxed);
+
+                                // Spawn a separate task for each connection
+                                tokio::spawn(async move {
+                                    Self::connection_streamer(stream, tx_clone).await;
+                                    // Decrement when connection ends
+                                    active_connections_clone2.fetch_sub(1, Ordering::Relaxed);
+                                });
+                            }
+                            Some(Err(_)) => continue, // Skip failed connections
+                            None => break, // No more incoming connections
+                        }
+                    }
+
+                    // Handle finish listener connections
+                    finish_result = finish_incoming.next() => {
+                        match finish_result {
+                            Some(Ok(_)) => {
+                                // Set cancellation flag
+                                should_cancel_clone.store(true, Ordering::Relaxed);
+
+                                // Wait for all active connections to finish
+                                while active_connections_clone.load(Ordering::Relaxed) > 0 {
+                                    tokio::time::sleep(tokio::time::Duration::from_millis(10)).await;
+                                }
+
+                                // Drop the tx to signal end of stream
+                                drop(tx);
+                                break;
+                            }
+                            Some(Err(_)) => continue,
+                            None => break,
+                        }
+                    }
                 }
             }
-            // After the first connection completes, drop tx to signal EOF
-            drop(tx);
         });
 
         // Reuse existing receiver stream logic
