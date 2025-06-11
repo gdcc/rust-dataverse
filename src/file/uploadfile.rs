@@ -212,22 +212,19 @@ impl UploadFile {
     ) -> Result<Body, Box<dyn Error>> {
         let (tx, rx) = tokio::sync::mpsc::channel(100);
 
-        // Spawn background task to handle connections concurrently
+        // Spawn background task to handle only the first connection
         tokio::spawn(async move {
             let mut incoming = UnixListenerStream::new(listener);
 
-            while let Some(conn_result) = incoming.next().await {
-                match conn_result {
-                    Ok(stream) => {
-                        let tx_clone = tx.clone();
-                        // Spawn a separate task for each connection
-                        tokio::spawn(async move {
-                            Self::connection_streamer(stream, tx_clone).await;
-                        });
-                    }
-                    Err(_) => continue, // Skip failed connections
+            // Wait for the first connection only
+            if let Some(conn_result) = incoming.next().await {
+                if let Ok(stream) = conn_result {
+                    // Handle the first connection directly and wait for it to complete
+                    Self::connection_streamer(stream, tx.clone()).await;
                 }
             }
+            // After the first connection completes, drop tx to signal EOF
+            drop(tx);
         });
 
         // Reuse existing receiver stream logic
