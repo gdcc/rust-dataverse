@@ -9,32 +9,33 @@ use indicatif::ProgressBar;
 use lazy_static::lazy_static;
 use reqwest::{Body, Client, Url};
 use tokio::io::AsyncReadExt;
-use tokio::net::{UnixListener, UnixStream};
-use tokio::sync::mpsc::Sender;
+use tokio::net::{TcpListener, UnixListener};
 use tokio::{
     fs::File,
     io::{AsyncRead, AsyncSeekExt},
 };
-use tokio_stream::wrappers::{ReceiverStream, UnixListenerStream};
+use tokio_stream::wrappers::ReceiverStream;
 use tokio_util::codec::{BytesCodec, FramedRead};
 use variantly::Variantly;
 
+use crate::file::tcp;
+use crate::file::unixsocket;
 use crate::prelude::CallbackFun;
-use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicUsize};
 use std::sync::Arc;
 
 lazy_static! {
-    static ref BUFFER_SIZE: usize = std::env::var("DVCLI_BUFFER_SIZE")
+    pub(crate) static ref BUFFER_SIZE: usize = std::env::var("DVCLI_BUFFER_SIZE")
         .ok()
         .and_then(|s| s.parse().ok())
-        .unwrap_or(2 * 1024 * 1024); // Default to 8GB if env var not set or invalid
+        .unwrap_or(2 * 1024 * 1024); // Default to 2MB if env var not set or invalid
 }
 
 /// A struct representing an upload file with a name, file source, and size.
 ///
 /// This is the base struct that is used to perform uploads to a Dataverse dataset.
 /// It can be used throughout all upload functions and provides a unified interface
-/// for different file sources, such as local files, remote URLs, and genericstreams.
+/// for different file sources, such as local files, remote URLs, and generic streams.
 ///
 /// Please see the [`FileSource`] enum for more details on the different file sources.
 #[derive(Debug)]
@@ -60,6 +61,7 @@ impl UploadFile {
     ///
     /// # Arguments
     /// * `name` - The name of the file.
+    /// * `dir` - The directory path of the file.
     /// * `file` - The source of the file data.
     /// * `size` - The size of the file in bytes.
     ///
@@ -78,6 +80,9 @@ impl UploadFile {
 
     /// Sets the start and end positions of the file.
     ///
+    /// This is used for partial file uploads or chunked uploads where only
+    /// a specific range of bytes needs to be uploaded.
+    ///
     /// # Arguments
     /// * `start` - The start position of the file in bytes.
     /// * `end` - The end position of the file in bytes.
@@ -88,8 +93,12 @@ impl UploadFile {
 
     /// Creates a `Body` from the file source.
     ///
+    /// This method converts the file source into a reqwest `Body` that can be
+    /// used for HTTP uploads. It handles different file sources appropriately
+    /// and applies callbacks and progress tracking.
+    ///
     /// # Arguments
-    /// * `callback` - An optional callback function.
+    /// * `callbacks` - Optional callback functions to be called during upload.
     /// * `pb` - A progress bar to track the upload progress.
     ///
     /// # Returns
@@ -104,8 +113,12 @@ impl UploadFile {
                 Self::create_receiver_stream(callbacks, pb, stream)
             }
             FileSource::UnixListener(listener) => {
-                Self::create_unix_listener_stream(callbacks, pb, listener)
+                Self::create_unix_listener_stream(callbacks, pb, listener).await
             }
+            FileSource::TCPListener {
+                listener,
+                finish_listener,
+            } => Self::create_tcp_listener_stream(callbacks, pb, listener, finish_listener).await,
             FileSource::File(mut file) => {
                 if let (Some(start), Some(end)) = (self.start, self.end) {
                     file.seek(SeekFrom::Start(start)).await?;
@@ -131,11 +144,11 @@ impl UploadFile {
         }
     }
 
-    /// Creates multiple `UploadFile`s from the file source.
+    /// Creates multiple `UploadFile`s from the file source by chunking it.
     ///
-    /// Important, this method can only be used with File/Paths
-    /// since the size of an URL or ReceiverStream is not known
-    /// prior to the upload.
+    /// This method splits a large file into smaller chunks for multipart uploads.
+    /// It can only be used with File/Path sources since the size of URLs or
+    /// ReceiverStreams is not known prior to the upload.
     ///
     /// # Arguments
     /// * `part_size` - The size of each chunk in bytes.
@@ -172,8 +185,12 @@ impl UploadFile {
 
     /// Creates a `Body` from a `ReceiverStream`.
     ///
+    /// This method converts a `ReceiverStream<Vec<u8>>` into a reqwest `Body`
+    /// suitable for HTTP uploads. It applies callbacks and progress tracking
+    /// to each chunk of data received from the stream.
+    ///
     /// # Arguments
-    /// * `callback` - An optional callback function.
+    /// * `callbacks` - Optional callback functions to be called for each chunk.
     /// * `pb` - A progress bar to track the upload progress.
     /// * `stream` - The `ReceiverStream` to be uploaded.
     ///
@@ -200,118 +217,112 @@ impl UploadFile {
 
     /// Creates a `Body` from a `UnixListener`.
     ///
+    /// This method sets up a Unix socket listener that can accept multiple
+    /// connections and stream their data as a single HTTP body. It creates
+    /// a finish listener for graceful shutdown and handles concurrent connections.
+    ///
     /// # Arguments
-    /// * `callback` - An optional callback function.
+    /// * `callbacks` - Optional callback functions to be called for each chunk.
     /// * `pb` - A progress bar to track the upload progress.
-    /// * `listener` - The `UnixListener` to be uploaded from.
+    /// * `listener` - The `UnixListener` to accept connections from.
     ///
     /// # Returns
     /// A `Result` containing the `Body` or an error.
-    fn create_unix_listener_stream(
+    async fn create_unix_listener_stream(
         callbacks: Option<Vec<CallbackFun>>,
         pb: ProgressBar,
         listener: UnixListener,
     ) -> Result<Body, Box<dyn Error>> {
-        let (tx, rx) = tokio::sync::mpsc::channel(100);
+        let (tx, mut rx) = tokio::sync::mpsc::channel(100);
 
-        // Spawn another unix listener, that when called will introduce a cancellation
-        let finish_address = format!(
-            "{}.cancel",
-            listener
-                .local_addr()
-                .unwrap()
-                .as_pathname()
-                .unwrap()
-                .to_string_lossy()
-        );
-        let finish_listener = UnixListener::bind(finish_address).unwrap();
+        // Setup finish listener for cancellation
+        let finish_listener = unixsocket::setup_finish_listener(&listener)?;
 
         // Shared state for cancellation and connection tracking
         let should_cancel = Arc::new(AtomicBool::new(false));
         let active_connections = Arc::new(AtomicUsize::new(0));
 
-        // Clone references for the background task
-        let should_cancel_clone = Arc::clone(&should_cancel);
-        let active_connections_clone = Arc::clone(&active_connections);
-
         // Spawn background task to handle connections concurrently
-        tokio::spawn(async move {
-            let mut incoming = UnixListenerStream::new(listener);
-            let mut finish_incoming = UnixListenerStream::new(finish_listener);
+        unixsocket::spawn_connection_handler(
+            listener,
+            finish_listener,
+            tx,
+            should_cancel,
+            active_connections,
+        );
 
-            loop {
-                tokio::select! {
-                    // Handle regular connections
-                    conn_result = incoming.next() => {
-                        match conn_result {
-                            Some(Ok(stream)) => {
-                                // Check if we should accept new connections
-                                if should_cancel_clone.load(Ordering::Relaxed) {
-                                    continue; // Don't accept new connections after cancellation
-                                }
+        // Wait for the first chunk of data before creating the body
+        // This ensures the HTTP request only starts when data is available
+        if let Some(first_chunk) = rx.recv().await {
+            // Create a new channel for the remaining data
+            let (new_tx, new_rx) = tokio::sync::mpsc::channel(100);
 
-                                let tx_clone = tx.clone();
-                                let active_connections_clone2 = Arc::clone(&active_connections_clone);
+            // Send the first chunk to the new channel
+            let _ = new_tx.send(first_chunk).await;
 
-                                // Increment active connection count
-                                active_connections_clone2.fetch_add(1, Ordering::Relaxed);
-
-                                // Spawn a separate task for each connection
-                                tokio::spawn(async move {
-                                    Self::connection_streamer(stream, tx_clone).await;
-                                    // Decrement when connection ends
-                                    active_connections_clone2.fetch_sub(1, Ordering::Relaxed);
-                                });
-                            }
-                            Some(Err(_)) => continue, // Skip failed connections
-                            None => break, // No more incoming connections
-                        }
-                    }
-
-                    // Handle finish listener connections
-                    finish_result = finish_incoming.next() => {
-                        match finish_result {
-                            Some(Ok(_)) => {
-                                // Set cancellation flag
-                                should_cancel_clone.store(true, Ordering::Relaxed);
-
-                                // Wait for all active connections to finish
-                                while active_connections_clone.load(Ordering::Relaxed) > 0 {
-                                    tokio::time::sleep(tokio::time::Duration::from_millis(10)).await;
-                                }
-
-                                // Drop the tx to signal end of stream
-                                drop(tx);
-                                break;
-                            }
-                            Some(Err(_)) => continue,
-                            None => break,
-                        }
+            // Forward remaining data from the original receiver to the new sender
+            tokio::spawn(async move {
+                while let Some(chunk) = rx.recv().await {
+                    if new_tx.send(chunk).await.is_err() {
+                        break; // Receiver dropped
                     }
                 }
-            }
-        });
+            });
 
-        // Reuse existing receiver stream logic
-        let receiver_stream = ReceiverStream::new(rx);
-        Self::create_receiver_stream(callbacks, pb, receiver_stream)
+            // Create the receiver stream with data already available
+            let receiver_stream = ReceiverStream::new(new_rx);
+            Self::create_receiver_stream(callbacks, pb, receiver_stream)
+        } else {
+            // No data received, return an empty body
+            Ok(Body::from(""))
+        }
     }
 
-    async fn connection_streamer(stream: UnixStream, tx: Sender<Vec<u8>>) {
-        let mut stream = stream;
-        let mut buffer = vec![0; *BUFFER_SIZE];
+    async fn create_tcp_listener_stream(
+        callbacks: Option<Vec<CallbackFun>>,
+        pb: ProgressBar,
+        listener: TcpListener,
+        finish_listener: TcpListener,
+    ) -> Result<Body, Box<dyn Error>> {
+        let (tx, mut rx) = tokio::sync::mpsc::channel(100);
 
-        loop {
-            match stream.read(&mut buffer).await {
-                Ok(0) => break, // EOF
-                Ok(bytes_read) => {
-                    let chunk = buffer[..bytes_read].to_vec();
-                    if tx.send(chunk).await.is_err() {
-                        return; // Receiver dropped
+        // Shared state for cancellation and connection tracking
+        let should_cancel = Arc::new(AtomicBool::new(false));
+        let active_connections = Arc::new(AtomicUsize::new(0));
+
+        // Spawn background task to handle connections concurrently
+        tcp::spawn_connection_handler(
+            listener,
+            finish_listener,
+            tx,
+            should_cancel,
+            active_connections,
+        );
+
+        // Wait for the first chunk of data before creating the body
+        // This ensures the HTTP request only starts when data is available
+        if let Some(first_chunk) = rx.recv().await {
+            // Create a new channel for the remaining data
+            let (new_tx, new_rx) = tokio::sync::mpsc::channel(100);
+
+            // Send the first chunk to the new channel
+            let _ = new_tx.send(first_chunk).await;
+
+            // Forward remaining data from the original receiver to the new sender
+            tokio::spawn(async move {
+                while let Some(chunk) = rx.recv().await {
+                    if new_tx.send(chunk).await.is_err() {
+                        break; // Receiver dropped
                     }
                 }
-                Err(_) => break, // Connection error
-            }
+            });
+
+            // Create the receiver stream with data already available
+            let receiver_stream = ReceiverStream::new(new_rx);
+            Self::create_receiver_stream(callbacks, pb, receiver_stream)
+        } else {
+            // No data received, return an empty body
+            Ok(Body::from(""))
         }
     }
 
@@ -416,6 +427,7 @@ impl UploadFile {
                 FileSource::RemoteUrl(_) => Ok(0),
                 FileSource::ReceiverStream(_) => Ok(0),
                 FileSource::UnixListener(_) => Ok(0),
+                FileSource::TCPListener { .. } => Ok(0),
             }
         }
     }
@@ -571,6 +583,23 @@ impl From<UnixListener> for UploadFile {
     }
 }
 
+pub fn tcp_listener_to_upload_file(
+    listener: TcpListener,
+    finish_listener: TcpListener,
+) -> UploadFile {
+    UploadFile {
+        name: "stream.dat".to_string(),
+        dir: None,
+        file: FileSource::TCPListener {
+            listener,
+            finish_listener,
+        },
+        size: 0,
+        start: None,
+        end: None,
+    }
+}
+
 /// An enum representing a source of file data, which can either be a `ReceiverStream`,
 /// a `File`, a `PathBuf`, or a `Url`.
 ///
@@ -597,6 +626,14 @@ pub enum FileSource {
     ///
     /// This type of file source is used to stream a file from a Unix socket.
     UnixListener(UnixListener),
+
+    /// A `TCPStream` of file data.
+    ///
+    /// This type of file source is used to stream a file from a TCP socket.
+    TCPListener {
+        listener: TcpListener,
+        finish_listener: TcpListener,
+    },
 
     /// A `File` of file data.
     ///
