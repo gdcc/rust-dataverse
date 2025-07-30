@@ -41,6 +41,10 @@ pub mod file {
     pub(crate) mod filestream;
     /// MIME type inference
     pub(crate) mod mime;
+    /// TCP socket utilities
+    pub(crate) mod tcp;
+    /// Unix socket utilities
+    pub(crate) mod unixsocket;
     /// File upload functionality
     pub(crate) mod uploadfile;
     /// ZIP file streaming utilities
@@ -213,6 +217,8 @@ pub mod cli {
     pub mod file;
     /// Information commands
     pub mod info;
+    /// Socket commands
+    pub mod pipe;
 }
 
 /// Test utilities
