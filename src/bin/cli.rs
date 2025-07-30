@@ -3,6 +3,7 @@ use std::error::Error;
 use colored::Colorize;
 use dataverse::cli::admin::AdminSubCommand;
 use dataverse::cli::auth::{AuthProfile, AuthSubCommand};
+use dataverse::cli::pipe::PipeSubCommand;
 use structopt::StructOpt;
 
 use dataverse::cli::base::Matcher;
@@ -45,6 +46,7 @@ enum DVCLI {
     Search(SearchQuery),
     Admin(AdminSubCommand),
     Auth(AuthSubCommand),
+    Pipe(PipeSubCommand),
 }
 
 fn main() {
@@ -76,6 +78,7 @@ fn main() {
         DVCLI::Search(command) => command.process(&client),
         DVCLI::Admin(command) => command.process(&client),
         DVCLI::Auth(command) => command.process(&client),
+        DVCLI::Pipe(command) => command.process(&client),
     }
 }
 
