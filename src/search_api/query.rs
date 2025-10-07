@@ -2,9 +2,9 @@ use std::collections::HashMap;
 use std::fmt;
 use std::str::FromStr;
 
+use clap::Args;
+use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
-use structopt::lazy_static::lazy_static;
-use structopt::StructOpt;
 use tokio::runtime::Runtime;
 
 use crate::cli::base::{evaluate_and_print_response, Matcher};
@@ -72,63 +72,62 @@ macro_rules! insert_multiple_if_some {
 /// This struct encapsulates all possible parameters that can be used when
 /// searching a Dataverse instance. It provides a flexible way to construct
 /// search queries with different filtering, sorting, and pagination options.
-#[derive(Debug, Serialize, Deserialize, StructOpt, Default)]
-#[structopt(about = "Search a Dataverse instance")]
+#[derive(Debug, Serialize, Deserialize, Args, Default)]
 pub struct SearchQuery {
     /// The search query string. This is the main search term.
-    #[structopt(short = "q", long = "query", help = "The search query string")]
+    #[arg(short = 'q', long = "query", help = "The search query string")]
     pub q: String,
 
     /// The type of search to perform (dataverse, dataset, or file).
-    #[structopt(short = "t", long = "type", help = "The type of search")]
+    #[arg(short = 't', long = "type", help = "The type of search")]
     pub search_type: Option<Vec<SearchType>>, // Represents "type" in the query parameters
 
     /// The subtree to search within, limiting results to a specific dataverse.
-    #[structopt(long, help = "The subtree to search within")]
+    #[arg(long, help = "The subtree to search within")]
     pub subtree: Option<Vec<String>>,
 
     /// The field to sort results by (name or date).
-    #[structopt(long, help = "The field to sort by")]
+    #[arg(long, help = "The field to sort by")]
     pub sort: Option<SortField>,
 
     /// The order of sorting (ascending or descending).
-    #[structopt(long, help = "The order of sorting")]
+    #[arg(long, help = "The order of sorting")]
     pub order: Option<Order>,
 
     /// The number of results to return per page.
-    #[structopt(long, help = "The number of results per page")]
+    #[arg(long, help = "The number of results per page")]
     pub per_page: Option<u32>,
 
     /// The starting index of the results for pagination.
-    #[structopt(long, help = "The starting index of the results")]
+    #[arg(long, help = "The starting index of the results")]
     pub start: Option<u32>,
 
     /// Whether to show relevance scores in the search results.
-    #[structopt(long, help = "Whether to show relevance scores")]
+    #[arg(long, help = "Whether to show relevance scores")]
     pub show_relevance: Option<bool>,
 
     /// Whether to show facets in the search results.
-    #[structopt(long, help = "Whether to show facets")]
+    #[arg(long, help = "Whether to show facets")]
     pub show_facets: Option<bool>,
 
     /// Filter queries to narrow down search results.
-    #[structopt(long = "filter", help = "The filter query")]
+    #[arg(long = "filter", help = "The filter query")]
     pub fq: Option<Vec<String>>,
 
     /// Whether to show entity IDs in the search results.
-    #[structopt(long, help = "Whether to show entity IDs")]
+    #[arg(long, help = "Whether to show entity IDs")]
     pub show_entity_ids: Option<bool>,
 
     /// The geographic point for geo-spatial searches.
-    #[structopt(long, help = "The geographic point")]
+    #[arg(long, help = "The geographic point")]
     pub geo_point: Option<String>,
 
     /// The geographic radius for geo-spatial searches.
-    #[structopt(long, help = "The geographic radius")]
+    #[arg(long, help = "The geographic radius")]
     pub geo_radius: Option<String>,
 
     /// The metadata fields to search within, limiting the search scope.
-    #[structopt(long = "fields", help = "The metadata fields to search within")]
+    #[arg(long = "fields", help = "The metadata fields to search within")]
     pub metadata_fields: Option<Vec<String>>,
 }
 
@@ -217,7 +216,7 @@ impl Matcher for SearchQuery {
 /// - Dataverse: Search for dataverse containers
 /// - Dataset: Search for datasets
 /// - File: Search for individual files
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum SearchType {
     /// Search for dataverse containers
     Dataverse,
@@ -255,7 +254,7 @@ impl FromStr for SearchType {
 /// This enum defines the available fields that can be used for sorting search results:
 /// - Name: Sort by name
 /// - Date: Sort by date
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum SortField {
     /// Sort by name
     Name,
@@ -290,7 +289,7 @@ impl FromStr for SortField {
 /// This enum defines the available sort orders:
 /// - Asc: Ascending order (A-Z, oldest to newest)
 /// - Desc: Descending order (Z-A, newest to oldest)
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum Order {
     /// Ascending order
     Asc,
