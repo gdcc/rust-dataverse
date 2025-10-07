@@ -1,0 +1,254 @@
+name: rust-tests
+
+services:
+  dataverse:
+    container_name: 'dataverse'
+    hostname: dataverse
+    image: ${DATAVERSE_IMAGE}
+    restart: on-failure
+    user: payara
+    environment:
+      DATAVERSE_DB_HOST: postgres
+      DATAVERSE_DB_PASSWORD: secret
+      DATAVERSE_DB_USER: ${DATAVERSE_DB_USER}
+      ENABLE_JDWP: '1'
+      ENABLE_RELOAD: '1'
+      DATAVERSE_JSF_REFRESH_PERIOD: '1'
+      DATAVERSE_FEATURE_API_BEARER_AUTH: '1'
+      DATAVERSE_FEATURE_INDEX_HARVESTED_METADATA_SOURCE: '1'
+      DATAVERSE_FEATURE_API_BEARER_AUTH_PROVIDE_MISSING_CLAIMS: '1'
+      DATAVERSE_MAIL_SYSTEM_EMAIL: 'dataverse@localhost'
+      DATAVERSE_MAIL_MTA_HOST: 'smtp'
+      DATAVERSE_AUTH_OIDC_ENABLED: '1'
+      DATAVERSE_AUTH_OIDC_CLIENT_ID: test
+      DATAVERSE_AUTH_OIDC_CLIENT_SECRET: 94XHrfNRwXsjqTqApRrwWmhDLDHpIYV8
+      DATAVERSE_AUTH_OIDC_AUTH_SERVER_URL: http://keycloak.mydomain.com:8090/realms/test
+      DATAVERSE_SPI_EXPORTERS_DIRECTORY: '/dv/exporters'
+      # These two oai settings are here to get HarvestingServerIT to pass
+      dataverse_oai_server_maxidentifiers: '2'
+      dataverse_oai_server_maxrecords: '2'
+      JVM_ARGS: -Ddataverse.files.storage-driver-id=file1
+        -Ddataverse.files.file1.type=file
+        -Ddataverse.files.file1.label=Filesystem
+        -Ddataverse.files.file1.directory=${STORAGE_DIR}/store
+        -Ddataverse.files.localstack1.type=s3
+        -Ddataverse.files.localstack1.label=LocalStack
+        -Ddataverse.files.localstack1.custom-endpoint-url=http://localstack:4566
+        -Ddataverse.files.localstack1.custom-endpoint-region=us-east-2
+        -Ddataverse.files.localstack1.bucket-name=mybucket
+        -Ddataverse.files.localstack1.path-style-access=true
+        -Ddataverse.files.localstack1.upload-redirect=true
+        -Ddataverse.files.localstack1.download-redirect=true
+        -Ddataverse.files.localstack1.access-key=default
+        -Ddataverse.files.localstack1.secret-key=default
+        -Ddataverse.pid.providers=fake
+        -Ddataverse.pid.default-provider=fake
+        -Ddataverse.pid.fake.type=FAKE
+        -Ddataverse.pid.fake.label=FakeDOIProvider
+        -Ddataverse.pid.fake.authority=10.5072
+        -Ddataverse.pid.fake.shoulder=FK2/
+    ports:
+      - '8080:8080' # HTTP (Dataverse Application)
+      - '4949:4848' # HTTPS (Payara Admin Console)
+      - '9009:9009' # JDWP
+      - '8686:8686' # JMX
+    networks:
+      - dataverse
+    depends_on:
+      postgres:
+        condition: service_started
+      solr:
+        condition: service_started
+      dv_initializer:
+        condition: service_completed_successfully
+      dev_localstack:
+        condition: service_healthy
+    volumes:
+      - ${PWD}/dv/data:/dv
+    tmpfs:
+      - /dumps:mode=770,size=2052M,uid=1000,gid=1000
+      - /tmp:mode=770,size=2052M,uid=1000,gid=1000
+    mem_limit: 2147483648 # 2 GiB
+    mem_reservation: 1024m
+    privileged: false
+    healthcheck:
+      test: curl --fail http://dataverse:8080/api/info/version || exit 1
+      interval: 10s
+      retries: 20
+      start_period: 20s
+      timeout: 240s
+
+  dv_initializer:
+    container_name: 'dv_initializer'
+    image: ${CONFIGBAKER_IMAGE}
+    restart: 'no'
+    command:
+      - sh
+      - -c
+      - 'fix-fs-perms.sh dv'
+    volumes:
+      - ${PWD}/dv/data:/dv
+
+  postgres:
+    container_name: 'postgres'
+    hostname: postgres
+    image: postgres:${POSTGRES_VERSION}
+    restart: on-failure
+    environment:
+      - POSTGRES_USER=${DATAVERSE_DB_USER}
+      - POSTGRES_PASSWORD=${DATAVERSE_DB_PASSWORD}
+    ports:
+      - '5432:5432'
+    networks:
+      - dataverse
+
+  solr_initializer:
+    container_name: 'solr_initializer'
+    image: ${CONFIGBAKER_IMAGE}
+    restart: 'no'
+    command:
+      - sh
+      - -c
+      - 'fix-fs-perms.sh solr && cp -a /template/* /solr-template'
+    volumes:
+      - ${PWD}/solr/data:/var/solr
+      - ${PWD}/solr/conf:/solr-template
+
+  solr:
+    container_name: 'solr'
+    hostname: 'solr'
+    image: solr:${SOLR_VERSION}
+    depends_on:
+      solr_initializer:
+        condition: service_completed_successfully
+    restart: on-failure
+    ports:
+      - '8983:8983'
+    networks:
+      - dataverse
+    command:
+      - 'solr-precreate'
+      - 'collection1'
+      - '/template'
+    volumes:
+      - ${PWD}/solr/data:/var/solr
+      - ${PWD}/solr/conf:/template
+
+  smtp:
+    container_name: 'smtp'
+    hostname: 'smtp'
+    image: maildev/maildev:2.0.5
+    restart: on-failure
+    ports:
+      - '25:25' # smtp server
+      - '1080:1080' # web ui
+    environment:
+      - MAILDEV_SMTP_PORT=25
+      - MAILDEV_MAIL_DIRECTORY=/mail
+    networks:
+      - dataverse
+    tmpfs:
+      - /mail:mode=770,size=128M,uid=1000,gid=1000
+
+  keycloak:
+    container_name: 'keycloak'
+    image: 'quay.io/keycloak/keycloak:26.3.2'
+    hostname: keycloak
+    environment:
+      - KEYCLOAK_ADMIN=kcadmin
+      - KEYCLOAK_ADMIN_PASSWORD=kcpassword
+      - KEYCLOAK_LOGLEVEL=DEBUG
+      - KC_HOSTNAME_STRICT=false
+    networks:
+      dataverse:
+        aliases:
+          - keycloak.mydomain.com
+    command: start-dev --import-realm --http-port=8090
+    ports:
+      - '8090:8090'
+    volumes:
+      - ${PWD}/conf/keycloak/test-realm.json:/opt/keycloak/data/import/test-realm.json
+
+  proxy:
+    container_name: 'proxy'
+    image: caddy:2-alpine
+    command: ['caddy', 'run', '-c', '/Caddyfile']
+    ports:
+      - '4848:4848' # Will expose Payara Admin Console (HTTPS) as HTTP
+    restart: always
+    volumes:
+      - ${PWD}/conf/proxy/Caddyfile:/Caddyfile:ro
+    depends_on:
+      - dataverse
+    networks:
+      - dataverse
+
+  dev_localstack:
+    container_name: 'dev_localstack'
+    hostname: 'localstack'
+    image: localstack/localstack:4.2.0
+    restart: on-failure
+    ports:
+      - '127.0.0.1:4566:4566'
+    environment:
+      - DEBUG=${DEBUG-}
+      - DOCKER_HOST=unix:///var/run/docker.sock
+      - HOSTNAME_EXTERNAL=localstack
+    networks:
+      - dataverse
+    volumes:
+      - ${PWD}/conf/localstack:/etc/localstack/init/ready.d
+    tmpfs:
+      - /localstack:mode=770,size=128M,uid=1000,gid=1000
+
+  previewers_provider:
+    container_name: 'previewers_provider'
+    hostname: previewers-provider
+    image: trivadis/dataverse-previewers-provider:latest
+    ports:
+      - '9080:9080'
+    networks:
+      - dataverse
+    environment:
+      - NGINX_HTTP_PORT=9080
+      - PREVIEWERS_PROVIDER_URL=http://localhost:9080
+      - VERSIONS=v1.4,betatest
+    platform: linux/amd64
+
+  register_previewers:
+    container_name: 'register_previewers'
+    hostname: register-previewers
+    image: trivadis/dataverse-deploy-previewers:latest
+    networks:
+      - dataverse
+    environment:
+      - DATAVERSE_URL=http://dataverse:8080
+      - TIMEOUT=10m
+      - PREVIEWERS_PROVIDER_URL=http://localhost:9080
+      - EXCLUDE_PREVIEWERS=
+      - REMOVE_EXISTING=true
+    command:
+      - deploy
+    restart: 'no'
+    platform: linux/amd64
+
+  bootstrap:
+    container_name: 'bootstrap'
+    hostname: 'bootstrap'
+    image: ${CONFIGBAKER_IMAGE}
+    restart: 'no'
+    networks:
+      - dataverse
+    volumes:
+      - ${PWD}/dv/bootstrap.exposed.env:/.env
+    command:
+      - sh
+      - -c
+      - 'bootstrap.sh -e /.env dev'
+    depends_on:
+      dataverse:
+        condition: service_healthy
+
+networks:
+  dataverse:
+    driver: bridge
