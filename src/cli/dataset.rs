@@ -12,8 +12,8 @@ use std::fs::File;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 
+use clap::Subcommand;
 use colored_json::Paint;
-use structopt::StructOpt;
 use tokio::runtime::Runtime;
 
 use crate::client::{print_error, BaseClient};
@@ -40,17 +40,33 @@ use crate::{data_access, direct_upload};
 
 use super::base::{evaluate_and_print_response, parse_file, Matcher};
 
+/// A CLI-friendly wrapper for file uploads that can be easily cloned and parsed
+#[derive(Debug, Clone)]
+pub struct CliUploadFile(String);
+
+impl std::str::FromStr for CliUploadFile {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(CliUploadFile(s.to_string()))
+    }
+}
+
+impl From<CliUploadFile> for UploadFile {
+    fn from(cli_file: CliUploadFile) -> Self {
+        UploadFile::from(cli_file.0.as_str())
+    }
+}
+
 /// Subcommands for managing datasets in a Dataverse instance
-#[derive(StructOpt, Debug)]
-#[structopt(about = "Handle datasets of the Dataverse instance")]
+#[derive(Subcommand, Debug)]
 pub enum DatasetSubCommand {
-    /// Retrieve a dataset's metadata
-    #[structopt(about = "Retrieve a datasets metadata")]
+    /// Retrieve a datasets metadata
     Meta {
-        #[structopt(help = "(Peristent) identifier of the dataset to retrieve")]
+        #[arg(help = "(Peristent) identifier of the dataset to retrieve")]
         id: Identifier,
 
-        #[structopt(
+        #[arg(
             short,
             long,
             help = "Version of the dataset to retrieve. Defaults to ':latest' when there is no API token, and ':draft' when there is an API token."
@@ -58,13 +74,12 @@ pub enum DatasetSubCommand {
         version: Option<DatasetVersion>,
     },
 
-    /// Create a new dataset in a collection
-    #[structopt(about = "Create a dataset")]
+    /// Create a dataset
     Create {
-        #[structopt(long, short, help = "Alias of the collection to create the dataset in")]
+        #[arg(long, short, help = "Alias of the collection to create the dataset in")]
         collection: String,
 
-        #[structopt(
+        #[arg(
             long,
             short,
             help = "Path to the JSON/YAML file containing the dataset body"
@@ -72,13 +87,12 @@ pub enum DatasetSubCommand {
         body: PathBuf,
     },
 
-    /// Publish a dataset version
-    #[structopt(about = "Publishes a dataset")]
+    /// Publishes a dataset
     Publish {
-        #[structopt(help = "Persistent identifier of the dataset to publish")]
+        #[arg(help = "Persistent identifier of the dataset to publish")]
         pid: String,
 
-        #[structopt(
+        #[arg(
             long,
             short,
             help = "Version of the dataset to publish (major, minor, updatecurrent)",
@@ -87,73 +101,68 @@ pub enum DatasetSubCommand {
         version: Version,
     },
 
-    /// Delete a dataset from the Dataverse instance
-    #[structopt(about = "Deletes a dataset")]
+    /// Deletes a dataset
     Delete {
-        #[structopt(help = "Identifier of the dataset to delete")]
+        #[arg(help = "Identifier of the dataset to delete")]
         id: i64,
     },
 
-    /// Edit dataset metadata
-    #[structopt(about = "Edit the metadata of a dataset")]
+    /// Edit the metadata of a dataset
     Edit {
-        #[structopt(long, short, help = "Persistent identifier of the dataset to edit")]
+        #[arg(long, short, help = "Persistent identifier of the dataset to edit")]
         pid: String,
 
-        #[structopt(
+        #[arg(
             long,
             short,
             help = "Path to the JSON/YAML file containing the metadata to edit"
         )]
         body: PathBuf,
 
-        #[structopt(long, short, help = "Whether to replace the metadata or not")]
+        #[arg(long, short, help = "Whether to replace the metadata or not")]
         replace: bool,
     },
 
     /// Link a dataset to another collection
-    #[structopt(about = "Link a dataset to another collection")]
     Link {
-        #[structopt(long, short, help = "(Persistent) identifier of the dataset to link")]
+        #[arg(long, short, help = "(Persistent) identifier of the dataset to link")]
         id: Identifier,
 
-        #[structopt(long, short, help = "Alias of the collection to link the dataset to")]
+        #[arg(long, short, help = "Alias of the collection to link the dataset to")]
         collection: String,
     },
 
     /// Upload a file to a dataset
-    #[structopt(about = "Upload a file to a dataset")]
     Upload {
-        #[structopt(
+        #[arg(
             long,
             short,
             help = "(Persistent) Identifier of the dataset to upload the file to"
         )]
         id: Identifier,
 
-        #[structopt(help = "Path or URL to the file to upload")]
-        path: UploadFile,
+        #[arg(help = "Path or URL to the file to upload")]
+        path: CliUploadFile,
 
-        #[structopt(short, long, help = "Dataverse path to the file to upload")]
+        #[arg(short, long, help = "Dataverse path to the file to upload")]
         dv_path: Option<PathBuf>,
 
-        #[structopt(long, help = "Path to the JSON/YAML file containing the file body")]
+        #[arg(long, help = "Path to the JSON/YAML file containing the file body")]
         body: Option<PathBuf>,
 
-        #[structopt(long, short, help = "Replace the file if it already exists")]
+        #[arg(long, short, help = "Replace the file if it already exists")]
         replace: bool,
     },
 
     /// Upload a file to a dataset using direct upload
-    #[structopt(about = "Upload a file to a dataset using direct upload")]
     DirectUpload {
-        #[structopt(long, short, help = "Identifier of the dataset to upload the file to")]
+        #[arg(long, short, help = "Identifier of the dataset to upload the file to")]
         id: Identifier,
 
-        #[structopt(help = "Path to the file to upload")]
+        #[arg(help = "Path to the file to upload")]
         paths: Vec<PathBuf>,
 
-        #[structopt(
+        #[arg(
             long,
             short,
             help = "Number of files to upload in parallel",
@@ -162,17 +171,16 @@ pub enum DatasetSubCommand {
         parallel: usize,
     },
 
-    /// Download files from a dataset
-    #[structopt(about = "Download a file from a dataset")]
+    /// Download a file from a dataset
     Download {
-        #[structopt(
+        #[arg(
             short,
             long,
             help = "Identifier of the dataset to download the file from"
         )]
         id: Option<Identifier>,
 
-        #[structopt(
+        #[arg(
             short,
             long,
             help = "Directory to save the file to",
@@ -180,29 +188,28 @@ pub enum DatasetSubCommand {
         )]
         out: PathBuf,
 
-        #[structopt(
+        #[arg(
             short,
             long,
             help = "Version of the dataset to download the file from. Defaults to ':latest' when there is no API token, and ':draft' when there is an API token."
         )]
         version: Option<DatasetVersion>,
 
-        #[structopt(long, help = "Whether to download the entire dataset or a single file")]
+        #[arg(long, help = "Whether to download the entire dataset or a single file")]
         complete: bool,
 
-        #[structopt(
+        #[arg(
             help = "Path/ID/PID to the file to download. Required when downloading a single file."
         )]
         path: Option<DataFilePath>,
     },
 
     /// List files in a dataset
-    #[structopt(about = "List files in a dataset")]
     ListFiles {
-        #[structopt(help = "Identifier of the dataset to list the files of")]
+        #[arg(help = "Identifier of the dataset to list the files of")]
         id: Identifier,
 
-        #[structopt(
+        #[arg(
             short,
             long,
             help = "Version of the dataset to list the files of. Defaults to ':latest' when there is no API token, and ':draft' when there is an API token."
@@ -210,13 +217,12 @@ pub enum DatasetSubCommand {
         version: Option<DatasetVersion>,
     },
 
-    /// Get the total size of a dataset
-    #[structopt(about = "Retrieve the size of a dataset")]
+    /// Retrieve the size of a dataset
     Size {
-        #[structopt(help = "Identifier of the dataset to retrieve the size of")]
+        #[arg(help = "Identifier of the dataset to retrieve the size of")]
         id: Identifier,
 
-        #[structopt(
+        #[arg(
             short,
             long,
             help = "Version of the dataset to retrieve the size of. Defaults to ':latest' when there is no API token, and ':draft' when there is an API token."
@@ -224,42 +230,40 @@ pub enum DatasetSubCommand {
         version: Option<DatasetVersion>,
     },
 
-    /// Export a dataset
-    #[structopt(about = "Export a dataset to a variety of formats")]
+    /// Export a dataset to a variety of formats
     Export {
-        #[structopt(short, long, help = "(Persistent) identifier of the dataset to export")]
+        #[arg(short, long, help = "(Persistent) identifier of the dataset to export")]
         id: Identifier,
 
-        #[structopt(
+        #[arg(
             short,
             long,
             help = "Format to use. E.g. 'ddi', 'oai_ddi', 'datacite', etc."
         )]
         format: String,
 
-        #[structopt(short, long, help = "Path to the file to save the export to")]
+        #[arg(short, long, help = "Path to the file to save the export to")]
         out: PathBuf,
     },
 
     /// Get locks for a dataset
-    #[structopt(about = "Get locks for a dataset")]
     Locks {
-        #[structopt(help = "Identifier of the dataset to get locks for")]
+        #[arg(help = "Identifier of the dataset to get locks for")]
         id: Identifier,
 
-        #[structopt(short = "t", long = "type", help = "Lock type to set to or filter by")]
+        #[arg(short = 't', long = "type", help = "Lock type to set to or filter by")]
         lock_type: Option<LockType>,
 
-        #[structopt(
-            short = "s",
+        #[arg(
+            short = 's',
             long = "set",
             help = "Whether to set the lock specified by '-t' on the dataset",
             conflicts_with = "remove"
         )]
         set: bool,
 
-        #[structopt(
-            short = "r",
+        #[arg(
+            short = 'r',
             long = "remove",
             help = "Whether to remove the lock specified by '-t' from the dataset",
             conflicts_with = "set"
@@ -268,26 +272,25 @@ pub enum DatasetSubCommand {
     },
 
     /// Submit a dataset for review
-    #[structopt(about = "Submit a dataset for review")]
     Review {
-        #[structopt(help = "Identifier of the dataset to submit for review")]
+        #[arg(help = "Identifier of the dataset to submit for review")]
         id: Identifier,
 
-        #[structopt(
+        #[arg(
             long,
             short,
             help = "Submit the dataset for review",
             conflicts_with = "reason",
-            required_unless = "reason"
+            required_unless_present = "reason"
         )]
         submit: bool,
 
-        #[structopt(
+        #[arg(
             long = "reason",
             short,
             help = "The reason for returning the dataset to the author",
             conflicts_with = "submit",
-            required_unless = "submit"
+            required_unless_present = "submit"
         )]
         reason: Option<String>,
     },
@@ -345,7 +348,7 @@ impl Matcher for DatasetSubCommand {
                 dv_path,
             } => {
                 let body = Self::prepare_upload_body(body, &dv_path);
-                let mut path = path;
+                let mut path: UploadFile = path.into();
 
                 if let FileSource::RemoteUrl(_) = &path.file {
                     if let Some(dv_path) = &dv_path {

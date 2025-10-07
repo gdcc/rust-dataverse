@@ -8,7 +8,7 @@
 
 use std::path::PathBuf;
 
-use structopt::StructOpt;
+use clap::Subcommand;
 use tokio::runtime::Runtime;
 
 use crate::client::BaseClient;
@@ -19,18 +19,16 @@ use crate::native_api::collection::{content, delete};
 use super::base::{evaluate_and_print_response, parse_file, Matcher};
 
 /// Subcommands for managing collections in a Dataverse instance
-#[derive(StructOpt, Debug)]
-#[structopt(about = "Handle collections of a Dataverse instance")]
+#[derive(Subcommand, Debug)]
 pub enum CollectionSubCommand {
-    /// Create a new collection in a parent dataverse
-    #[structopt(about = "Create a collection")]
+    /// Create a collection
     Create {
         /// Alias of the parent dataverse where the collection will be created
-        #[structopt(long, short, help = "Alias of the parent dataverse")]
+        #[arg(long, short, help = "Alias of the parent dataverse")]
         parent: String,
 
         /// Path to a JSON/YAML file containing the collection configuration
-        #[structopt(
+        #[arg(
             long,
             short,
             help = "Path to the JSON/YAML file containing the collection body"
@@ -38,27 +36,24 @@ pub enum CollectionSubCommand {
         body: PathBuf,
     },
 
-    /// Get the content/metadata of a collection
-    #[structopt(about = "Collection content")]
+    /// Collection content
     Content {
         /// Alias of the collection to get content for
-        #[structopt(help = "Alias of the collection")]
+        #[arg(help = "Alias of the collection")]
         alias: String,
     },
 
-    /// Publish a collection, making it publicly visible
-    #[structopt(about = "Publish a collection")]
+    /// Publish a collection
     Publish {
         /// Alias of the collection to publish
-        #[structopt(help = "Alias of the collection to publish")]
+        #[arg(help = "Alias of the collection to publish")]
         alias: String,
     },
 
-    /// Delete a collection from the Dataverse instance
-    #[structopt(about = "Delete a collection")]
+    /// Delete a collection
     Delete {
         /// Alias of the collection to delete
-        #[structopt(help = "Alias of the collection to delete")]
+        #[arg(help = "Alias of the collection to delete")]
         alias: String,
     },
 }

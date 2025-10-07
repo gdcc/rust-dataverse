@@ -7,7 +7,7 @@
 
 use std::path::PathBuf;
 
-use structopt::StructOpt;
+use clap::Subcommand;
 
 use crate::data_access;
 use crate::data_access::datafile::DataFilePath;
@@ -20,46 +20,42 @@ use crate::{client::BaseClient, native_api::dataset::upload::UploadBody};
 use super::base::{evaluate_and_print_response, parse_file, Matcher};
 
 /// Subcommands for managing files in a Dataverse instance
-#[derive(StructOpt, Debug)]
-#[structopt(about = "Handle files of a Dataverse instance")]
+#[derive(Subcommand, Debug)]
 pub enum FileSubCommand {
-    /// Retrieves metadata for a specific file
-    #[structopt(about = "Get file metadata")]
+    /// Get file metadata
     Meta {
-        #[structopt(help = "Identifier of the file to get metadata for")]
+        #[arg(help = "Identifier of the file to get metadata for")]
         id: Identifier,
     },
 
-    /// Replaces an existing file with a new version
-    #[structopt(about = "Replace a file")]
+    /// Replace a file
     Replace {
-        #[structopt(help = "Path to the file to replace")]
+        #[arg(help = "Path to the file to replace")]
         path: PathBuf,
 
-        #[structopt(long, short, help = "Identifier of the of the file to replace")]
+        #[arg(long, short, help = "Identifier of the of the file to replace")]
         id: String,
 
-        #[structopt(
+        #[arg(
             long,
             short,
             help = "Path to the JSON/YAML file containing the file body"
         )]
         body: Option<PathBuf>,
 
-        #[structopt(long, short, help = "Force the replacement of the file")]
+        #[arg(long, short, help = "Force the replacement of the file")]
         force: bool,
     },
 
-    /// Downloads a file from a dataset
-    #[structopt(about = "Download a file")]
+    /// Download a file
     Download {
-        #[structopt(help = "Identifier of the file to download")]
+        #[arg(help = "Identifier of the file to download")]
         file_id: DataFilePath,
 
-        #[structopt(short, long, help = "Path to save the file to")]
+        #[arg(short, long, help = "Path to save the file to")]
         path: PathBuf,
 
-        #[structopt(short, long, help = "Version of the dataset to download the file from")]
+        #[arg(short, long, help = "Version of the dataset to download the file from")]
         version: Option<DatasetVersion>,
     },
 }

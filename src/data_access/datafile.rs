@@ -142,7 +142,7 @@ async fn single_stream(
 }
 
 /// Represents different ways to identify a data file.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum DataFilePath {
     /// A file path as a string.
     Path(String),

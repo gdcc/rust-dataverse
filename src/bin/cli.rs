@@ -1,9 +1,9 @@
 use std::error::Error;
 
+use clap::Parser;
 use colored::Colorize;
 use dataverse::cli::admin::AdminSubCommand;
 use dataverse::cli::auth::{prompt_for_credentials, AuthProfile, AuthSubCommand};
-use structopt::StructOpt;
 
 use dataverse::cli::base::Matcher;
 use dataverse::cli::collection::CollectionSubCommand;
@@ -13,42 +13,59 @@ use dataverse::cli::info::InfoSubCommand;
 use dataverse::client::BaseClient;
 use dataverse::search_api::query::SearchQuery;
 
+fn get_styles() -> clap::builder::Styles {
+    clap::builder::Styles::styled()
+        .header(clap::builder::styling::AnsiColor::Green.on_default().bold())
+        .usage(clap::builder::styling::AnsiColor::Green.on_default().bold())
+        .literal(clap::builder::styling::AnsiColor::Cyan.on_default().bold())
+        .placeholder(clap::builder::styling::AnsiColor::Magenta.on_default())
+}
+
 static HEADER: &str = r#"
 --- Dataverse Command Line Interface (DVCLI) ---
 "#;
 
-#[derive(StructOpt, Debug)]
+#[derive(Parser, Debug)]
 struct GlobalOpts {
     /// Profile name to use for configuration
-    #[structopt(short, long)]
+    #[arg(short, long)]
     profile: Option<String>,
 }
 
-#[derive(StructOpt, Debug)]
-#[structopt(about = "CLI to interact with Dataverse")]
+#[derive(Parser, Debug)]
+#[command(
+    about = "CLI to interact with Dataverse",
+    styles = get_styles()
+)]
 #[allow(clippy::upper_case_acronyms)]
 struct CLI {
-    #[structopt(flatten)]
+    #[command(flatten)]
     global: GlobalOpts,
 
-    #[structopt(subcommand)]
+    #[command(subcommand)]
     cmd: DVCLI,
 }
 
-#[derive(StructOpt, Debug)]
+#[derive(clap::Subcommand, Debug)]
 #[allow(clippy::upper_case_acronyms)]
 enum DVCLI {
+    #[command(subcommand)]
     Info(InfoSubCommand),
+    #[command(subcommand)]
     Collection(CollectionSubCommand),
+    #[command(subcommand)]
     Dataset(DatasetSubCommand),
+    #[command(subcommand)]
     File(FileSubCommand),
     Search(SearchQuery),
+    #[command(subcommand)]
     Admin(AdminSubCommand),
+    #[command(subcommand)]
     Auth(AuthSubCommand),
 }
 
 fn main() {
-    let cli = CLI::from_args();
+    let cli = CLI::parse();
 
     // This is a special case for the Auth command, which is used to set the profile
     // and does not require a Dataverse instance.
