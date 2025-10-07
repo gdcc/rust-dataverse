@@ -3,3 +3,6 @@ src/bin/dvtest.rs
 .idea/*
 .DS_Store
 */**/.DS_Store
+
+dv/
+solr/
