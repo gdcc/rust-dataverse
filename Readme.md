@@ -21,31 +21,12 @@ A comprehensive Rust library and command-line interface for interacting with the
 
 ## Features
 
-**Dataverse Rust** provides complete coverage of core Dataverse operations through both a programmatic library interface and a full-featured CLI:
-
-### 📚 Collections
-
-Create, publish, and manage Dataverse collections with hierarchical organization support.
-
-### 📊 Datasets
-
-Full dataset lifecycle management including creation, metadata editing, versioning, publishing, linking, and deletion. Support for dataset locks and review workflows.
-
-### 📁 Files
-
-Upload files via standard or direct upload (with parallel batch support), replace existing files, download files and complete datasets, and manage file metadata.
-
-### 🔍 Search
-
-Query datasets and files across your Dataverse instance with flexible search parameters.
-
-### 🛠️ Administration
-
-Manage storage drivers, configure external tools, and perform administrative operations.
-
-### ℹ️ Instance Information
-
-Retrieve version information and available metadata exporters from your Dataverse instance.
+- **📚 Collections** - Create, publish, and manage Dataverse collections with hierarchical organization support
+- **📊 Datasets** - Full dataset lifecycle management including creation, metadata editing, versioning, publishing, linking, and deletion. Support for dataset locks and review workflows
+- **📁 Files** - Upload files via standard or direct upload (with parallel batch support), replace existing files, download files and complete datasets, and manage file metadata
+- **🔍 Search** - Query datasets and files across your Dataverse instance with flexible search parameters
+- **🛠️ Administration** - Manage storage drivers, configure external tools, and perform administrative operations
+- **ℹ️ Instance Information** - Retrieve version information and available metadata exporters from your Dataverse instance
 
 ## Installation
 
