@@ -4,7 +4,7 @@
 
 # Dataverse Rust
 
-![Build Status](https://github.com/JR-1991/rust-dataverse/actions/workflows/tests.yml/badge.svg)
+![Build Status](https://github.com/gdcc/rust-dataverse/actions/workflows/tests.yml/badge.svg)
 
 A comprehensive Rust library and command-line interface for interacting with the [Dataverse API](https://guides.dataverse.org/en/latest/api/). Build robust data repository workflows with type-safe, asynchronous operations.
 
