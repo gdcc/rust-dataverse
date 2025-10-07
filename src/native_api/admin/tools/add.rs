@@ -223,8 +223,11 @@ mod tests {
         manifest.tool_name = format!("fabulous{random_suffix}");
 
         // First registration
-        let response1 = register_external_tool(&client, manifest.clone(), false).await;
-        assert!(response1.is_ok());
+        let response1 = register_external_tool(&client, manifest.clone(), false)
+            .await
+            .unwrap();
+
+        assert!(response1.status.is_ok());
 
         // Second registration without overwrite - should panic
         register_external_tool(&client, manifest.clone(), false)

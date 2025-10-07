@@ -47,16 +47,82 @@
       "description": "Either GET or POST"
     },
     "toolParameters": {
-      "type": "string",
-      "description": "JSON string representation of the tool parameters object containing query parameters for substitution"
+      "type": "object",
+      "properties": {
+        "queryParameters": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "patternProperties": {
+              "^[a-zA-Z][a-zA-Z0-9_]*$": {
+                "type": "string",
+                "pattern": "^\\{(siteUrl|fileId|filePid|apiToken|datasetId|datasetPid|datasetVersion|localeCode)\\}$"
+              }
+            },
+            "additionalProperties": false,
+            "minProperties": 1,
+            "maxProperties": 1
+          },
+          "description": "Key/value combinations that can be appended to the toolUrl using reserved words for substitution"
+        }
+      },
+      "additionalProperties": false,
+      "description": "Tool parameters object containing query parameters for substitution"
     },
     "allowedApiCalls": {
-      "type": "string",
-      "description": "JSON string representation of an array of objects defining callbacks the tool is allowed to make to the Dataverse API"
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "A name the tool will use to identify this callback URL"
+          },
+          "httpMethod": {
+            "type": "string",
+            "enum": ["GET", "POST", "PUT", "DELETE"],
+            "description": "Which HTTP method the specified callback uses"
+          },
+          "urlTemplate": {
+            "type": "string",
+            "description": "The relative URL for the callback using reserved words to indicate where values should be dynamically substituted"
+          },
+          "timeOut": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "For non-public datasets and datafiles, how many minutes the signed URLs given to the tool should be valid for"
+          }
+        },
+        "required": ["name", "httpMethod", "urlTemplate"],
+        "additionalProperties": false
+      },
+      "description": "An array of objects defining callbacks the tool is allowed to make to the Dataverse API"
     },
     "requirements": {
-      "type": "string",
-      "description": "JSON string representation of resources your tool needs to function"
+      "type": "object",
+      "properties": {
+        "auxFilesExist": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "formatTag": {
+                "type": "string",
+                "description": "The format tag of the required auxiliary file"
+              },
+              "formatVersion": {
+                "type": "string",
+                "description": "The format version of the required auxiliary file"
+              }
+            },
+            "required": ["formatTag", "formatVersion"],
+            "additionalProperties": false
+          },
+          "description": "An array containing formatTag and formatVersion pairs for each auxiliary file that your tool needs to download to function properly"
+        }
+      },
+      "additionalProperties": false,
+      "description": "Resources your tool needs to function. Currently, requirements only apply to preview tools"
     }
   },
   "required": ["id", "displayName", "scope", "toolUrl"],

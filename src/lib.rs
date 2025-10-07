@@ -6,6 +6,10 @@
 
 #![warn(unused_crate_dependencies)]
 
+// libdbus-sys is needed by keyring on Linux but not directly used
+#[cfg(not(any(target_os = "macos", target_os = "windows")))]
+use libdbus_sys as _;
+
 /// Client functionality for interacting with Dataverse APIs
 pub mod client;
 
