@@ -7,7 +7,7 @@
 
 use std::path::PathBuf;
 
-use structopt::StructOpt;
+use clap::Subcommand;
 use tokio::runtime::Runtime;
 
 use crate::client::BaseClient;
@@ -17,49 +17,43 @@ use crate::native_api::admin::tools;
 use super::base::{evaluate_and_print_response, Matcher};
 
 /// Subcommands for administrative tasks in a Dataverse instance
-#[derive(StructOpt, Debug)]
-#[structopt(about = "Handle admin tasks of the Dataverse instance")]
+#[derive(Subcommand, Debug)]
 pub enum AdminSubCommand {
-    /// Get a list of available storage drivers for the Dataverse instance
-    #[structopt(about = "Retrieve the storage drivers available for the Dataverse instance")]
+    /// Retrieve the storage drivers available for the Dataverse instance
     StorageDrivers {},
 
-    /// Configure a specific storage driver for a collection
-    #[structopt(about = "Set the storage driver for a collection")]
+    /// Set the storage driver for a collection
     SetStorage {
         /// The storage driver identifier to assign
-        #[structopt(short, long, help = "Storage driver to set")]
+        #[arg(short, long, help = "Storage driver to set")]
         driver: String,
         /// Collection alias to configure storage for
-        #[structopt(help = "Alias of the collection to set the storage driver for")]
+        #[arg(help = "Alias of the collection to set the storage driver for")]
         alias: String,
     },
 
-    /// Retrieve the currently configured storage driver for a collection
-    #[structopt(about = "Get the storage driver for a collection")]
+    /// Get the storage driver for a collection
     GetStorage {
         /// Collection alias to get storage config from
-        #[structopt(help = "Alias of the collection to get the storage driver for")]
+        #[arg(help = "Alias of the collection to get the storage driver for")]
         alias: String,
     },
 
-    /// Reset a collection's storage driver to the default
-    #[structopt(about = "Reset the storage driver for a collection")]
+    /// Reset the storage driver for a collection
     ResetStorage {
         /// Collection alias to reset storage for
-        #[structopt(help = "Alias of the collection to reset the storage driver for")]
+        #[arg(help = "Alias of the collection to reset the storage driver for")]
         alias: String,
     },
 
-    /// Register an external tool
-    #[structopt(about = "Registers an external tool with the Dataverse instance")]
+    /// Registers an external tool with the Dataverse instance
     AddExternalTool {
         /// The tool manifest to register
-        #[structopt(help = "Path to the tool manifest file")]
+        #[arg(help = "Path to the tool manifest file")]
         manifest: PathBuf,
 
         /// Whether to overwrite an existing tool when it already exists. This will delete the existing tool and register a new one.
-        #[structopt(
+        #[arg(
             short,
             long,
             help = "Whether to overwrite an existing tool when it already exists. This will delete the existing tool and register a new one."
@@ -67,8 +61,7 @@ pub enum AdminSubCommand {
         overwrite: bool,
     },
 
-    /// List all external tools
-    #[structopt(about = "Lists all external tools registered with the Dataverse instance")]
+    /// Lists all external tools registered with the Dataverse instance
     ListExternalTools {},
 }
 

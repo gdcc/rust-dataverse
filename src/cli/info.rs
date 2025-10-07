@@ -8,9 +8,9 @@
 
 use crate::client::BaseClient;
 use crate::native_api;
+use clap::Subcommand;
 use colored::Colorize;
 use lazy_static::lazy_static;
-use structopt::StructOpt;
 
 use super::base::{evaluate_and_print_response, Matcher};
 
@@ -27,15 +27,12 @@ You can use the key to export a dataset using the following command:
 }
 
 /// Subcommands for retrieving Dataverse instance information
-#[derive(StructOpt, Debug)]
-#[structopt(about = "Retrieve information about the Dataverse instance")]
+#[derive(Subcommand, Debug)]
 pub enum InfoSubCommand {
-    /// Retrieves the version of the Dataverse instance
-    #[structopt(about = "Retrieve the version of the Dataverse instance")]
+    /// Retrieve the version of the Dataverse instance
     Version,
 
-    /// Retrieves the exporters of the Dataverse instance
-    #[structopt(about = "Retrieve the exporters of the Dataverse instance")]
+    /// Retrieve the exporters of the Dataverse instance
     Exporters,
 }
 

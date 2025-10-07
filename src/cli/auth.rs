@@ -12,7 +12,7 @@ use colored::Colorize;
 use dialoguer::Input;
 use keyring::{Entry, Result};
 use rpassword::prompt_password;
-use structopt::StructOpt;
+use clap::Subcommand;
 use url::Url;
 use uuid::Uuid;
 
@@ -75,22 +75,20 @@ pub fn prompt_for_credentials() -> std::result::Result<(String, String), Box<dyn
 }
 
 /// Subcommands for handling authentication in the Dataverse CLI
-#[derive(StructOpt, Debug)]
-#[structopt(about = "Handle authentication of the Dataverse CLI")]
+#[derive(Subcommand, Debug)]
 pub enum AuthSubCommand {
-    /// Set an authentication profile with a name, URL and token
-    #[structopt(about = "Set the authentication profile")]
+    /// Set the authentication profile
     Set {
         /// Name to identify this authentication profile
-        #[structopt(short, long, help = "Name of the profile")]
+        #[arg(short, long, help = "Name of the profile")]
         name: Option<String>,
 
         /// URL of the Dataverse server to authenticate against
-        #[structopt(short, long, help = "URL of the Dataverse server")]
+        #[arg(short, long, help = "URL of the Dataverse server")]
         url: Option<String>,
 
         /// API token used for authentication with the Dataverse server
-        #[structopt(short, long, help = "API token for authentication")]
+        #[arg(short, long, help = "API token for authentication")]
         token: Option<String>,
     },
 }
