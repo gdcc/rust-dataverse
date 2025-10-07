@@ -80,11 +80,13 @@ mod tests {
 
         let added = register_external_tool(&client, manifest.clone(), false)
             .await
-            .expect("Could not register external tool")
-            .data
-            .unwrap();
+            .expect("Could not register external tool");
 
-        let tool_id = added.id;
+        if added.status.is_err() {
+            panic!("Could not register external tool: {:#?}", added);
+        }
+
+        let tool_id = added.data.unwrap().id;
         let response = remove_external_tool(&client, tool_id)
             .await
             .expect("Could not remove external tool: Request failed");

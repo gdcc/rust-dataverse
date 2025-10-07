@@ -1,15 +1,12 @@
 use typify::import_types;
 
 use crate::{
-    client::{BaseClient, evaluate_response},
+    client::{evaluate_response, BaseClient},
     request::RequestType,
     response::Response,
 };
 
-import_types!(
-    schema = "models/dataset/delete.json",
-    struct_builder = true,
-);
+import_types!(schema = "models/dataset/delete.json", struct_builder = true,);
 
 /// Deletes a dataset by its ID.
 ///
@@ -61,7 +58,7 @@ pub async fn delete_dataset(
 
 #[cfg(test)]
 mod tests {
-    use crate::prelude::{BaseClient, dataset};
+    use crate::prelude::{dataset, BaseClient};
     use crate::test_utils::{create_test_dataset, extract_test_env};
 
     /// Tests the successful deletion of an existing dataset.
@@ -83,18 +80,22 @@ mod tests {
     async fn test_delete_dataset() {
         // Set up the client
         let (api_token, base_url, _) = extract_test_env();
-        let client = BaseClient::new(&base_url, Some(&api_token))
-            .expect("Failed to create client");
+        let client = BaseClient::new(&base_url, Some(&api_token)).expect("Failed to create client");
 
         // Create a dataset
         let (id, _) = create_test_dataset(&client, "Root").await;
 
         // Delete the dataset
         let response = dataset::delete::delete_dataset(&client, &id)
-            .await.expect("Failed to delete dataset");
+            .await
+            .expect("Failed to delete dataset");
 
         // Assert the request was successful
-        assert!(response.status.is_ok());
+        assert!(
+            response.status.is_ok(),
+            "Failed to delete dataset: {:?}",
+            response
+        );
     }
 
     /// Tests the deletion of a non-existent dataset.
@@ -117,12 +118,12 @@ mod tests {
     async fn test_delete_dataset_not_found() {
         // Set up the client
         let (api_token, base_url, _) = extract_test_env();
-        let client = BaseClient::new(&base_url, Some(&api_token))
-            .expect("Failed to create client");
+        let client = BaseClient::new(&base_url, Some(&api_token)).expect("Failed to create client");
 
         // Attempt to delete a non-existent dataset
         let response = dataset::delete::delete_dataset(&client, &-1)
-            .await.expect("Failed to delete dataset");
+            .await
+            .expect("Failed to delete dataset");
 
         // Assert the request was successful
         assert!(response.status.is_err());
