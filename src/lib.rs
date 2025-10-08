@@ -226,6 +226,8 @@ pub mod cli {
     pub mod dataset;
     /// File commands
     pub mod file;
+    /// File picker functionality
+    pub mod file_picker;
     /// Information commands
     pub mod info;
 }
