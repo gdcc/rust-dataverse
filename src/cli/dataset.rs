@@ -16,6 +16,7 @@ use clap::Subcommand;
 use colored_json::Paint;
 use tokio::runtime::Runtime;
 
+use crate::cli::file_picker::{pick_upload_file, FilePickerOptions};
 use crate::client::{print_error, BaseClient};
 use crate::data_access::datafile::DataFilePath;
 use crate::datasetversion::DatasetVersion;
@@ -142,7 +143,7 @@ pub enum DatasetSubCommand {
         id: Identifier,
 
         #[arg(help = "Path or URL to the file to upload")]
-        path: CliUploadFile,
+        path: Option<CliUploadFile>,
 
         #[arg(short, long, help = "Dataverse path to the file to upload")]
         dv_path: Option<PathBuf>,
@@ -348,7 +349,11 @@ impl Matcher for DatasetSubCommand {
                 dv_path,
             } => {
                 let body = Self::prepare_upload_body(body, &dv_path);
-                let mut path: UploadFile = path.into();
+
+                let cli_files = path.map(|p| PathBuf::from(p.0)).into_iter().collect();
+                let mut path: UploadFile =
+                    pick_upload_file(&FilePickerOptions::as_single(), cli_files)
+                        .expect("Failed to pick file or no file provided");
 
                 if let FileSource::RemoteUrl(_) = &path.file {
                     if let Some(dv_path) = &dv_path {
@@ -379,7 +384,10 @@ impl Matcher for DatasetSubCommand {
                 parallel,
             } => {
                 // We are currently using the default body for direct upload.
-                // TODO: Allow custom bodies for future versions of the CLI
+                let paths: Vec<UploadFile> =
+                    pick_upload_file(&FilePickerOptions::as_multi(), paths)
+                        .expect("Failed to pick files or no files provided");
+
                 let bodies = paths
                     .iter()
                     .map(Self::create_direct_upload_body)
@@ -709,24 +717,27 @@ impl DatasetSubCommand {
     ///
     /// # Arguments
     ///
-    /// * `path` - A reference to the PathBuf containing the file path
+    /// * `file` - A reference to the UploadFile containing the file path
     ///
     /// # Returns
     ///
     /// A DirectUploadBody with the filename set
-    fn create_direct_upload_body(path: &PathBuf) -> Result<DirectUploadBody, String> {
-        let filename = path
-            .file_name()
-            .and_then(|name| name.to_str())
-            .map(String::from)
-            .unwrap_or_default();
-
-        let mime = infer_mime(path).map_err(|e| format!("Failed to infer mime type. Direct upload only supports files with known mime types. Error: {}", e))?;
-
-        Ok(DirectUploadBody {
-            file_name: Some(filename),
-            mime_type: Some(mime),
-            ..Default::default()
-        })
+    fn create_direct_upload_body(file: &UploadFile) -> Result<DirectUploadBody, String> {
+        match &file.file {
+            FileSource::Path(path) => {
+                let filename = path
+                    .file_name()
+                    .and_then(|f| f.to_str())
+                    .ok_or_else(|| "Failed to extract filename for direct upload".to_string())?;
+                let mime = infer_mime(path)
+                    .map_err(|e| format!("Failed to infer mime type. Direct upload only supports files with known mime types. Error: {}", e))?;
+                Ok(DirectUploadBody {
+                    file_name: Some(filename.to_string()),
+                    mime_type: Some(mime),
+                    ..Default::default()
+                })
+            }
+            _ => Err("Direct upload only supports local files".to_string()),
+        }
     }
 }

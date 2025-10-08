@@ -9,8 +9,10 @@ use std::path::PathBuf;
 
 use clap::Subcommand;
 
+use crate::cli::file_picker::{pick_upload_file, FilePickerOptions};
 use crate::data_access;
 use crate::data_access::datafile::DataFilePath;
+use crate::file::UploadFile;
 use crate::native_api::file::replace;
 use crate::prelude::file::metadata;
 use crate::prelude::{DatasetVersion, Identifier};
@@ -75,9 +77,12 @@ impl Matcher for FileSubCommand {
                 body,
                 force,
             } => {
+                let cli_files = vec![path];
+                let path: UploadFile = pick_upload_file(&FilePickerOptions::as_single(), cli_files)
+                    .expect("Failed to pick file or no file provided");
                 let body = prepare_replace_body(&body, &force);
                 let response =
-                    runtime.block_on(replace::replace_file(client, &id, path.clone(), body, None));
+                    runtime.block_on(replace::replace_file(client, &id, path, body, None));
 
                 evaluate_and_print_response(response);
             }
