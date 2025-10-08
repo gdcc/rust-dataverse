@@ -145,11 +145,14 @@ pub fn pick_files(options: &FilePickerOptions, files: Vec<PathBuf>) -> Option<Fi
         return Some(files.into());
     }
 
-    if !options.no_gui && gui_probably_available() {
-        if let Some(result) = pick_files_gui(options.multi) {
-            return Some(result);
+    #[cfg(any(target_os = "macos", target_os = "windows"))]
+    {
+        if !options.no_gui && gui_probably_available() {
+            if let Some(result) = pick_files_gui(options.multi) {
+                return Some(result);
+            }
+            eprintln!("No file selected via GUI; falling back to TTY prompt…");
         }
-        eprintln!("No file selected via GUI; falling back to TTY prompt…");
     }
 
     Some(pick_file_tty(options.multi).into())
@@ -157,19 +160,14 @@ pub fn pick_files(options: &FilePickerOptions, files: Vec<PathBuf>) -> Option<Fi
 
 /// Checks if a GUI is probably available on the current platform.
 ///
-/// On Linux, this checks for the presence of the `DISPLAY` or `WAYLAND_DISPLAY` environment variables.
 /// On macOS and Windows, this always returns `true`.
-/// On other platforms, this returns `false`.
+/// On Linux and other platforms, this returns `false` (forcing TTY prompts).
 fn gui_probably_available() -> bool {
-    #[cfg(target_os = "linux")]
-    {
-        std::env::var_os("DISPLAY").is_some() || std::env::var_os("WAYLAND_DISPLAY").is_some()
-    }
     #[cfg(any(target_os = "macos", target_os = "windows"))]
     {
         true
     }
-    #[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows")))]
+    #[cfg(not(any(target_os = "macos", target_os = "windows")))]
     {
         false
     }
@@ -179,6 +177,8 @@ fn gui_probably_available() -> bool {
 ///
 /// If `multi` is `true`, allows selecting multiple files. Otherwise, only a single file can be selected.
 ///
+/// This function is only available on macOS and Windows.
+///
 /// # Arguments
 ///
 /// * `multi` - Whether to allow multiple file selection.
@@ -186,6 +186,7 @@ fn gui_probably_available() -> bool {
 /// # Returns
 ///
 /// An `Option<FilePickerResult>` containing the selected files, or `None` if no files were selected.
+#[cfg(any(target_os = "macos", target_os = "windows"))]
 fn pick_files_gui(multi: bool) -> Option<FilePickerResult> {
     let dlg = rfd::FileDialog::new();
 
