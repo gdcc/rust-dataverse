@@ -99,8 +99,11 @@ impl Into<UploadFile> for FilePickerResult {
     fn into(self) -> UploadFile {
         match self {
             FilePickerResult::Single(path) => UploadFile::from(path),
-            FilePickerResult::Multiple(_) => {
-                panic!("Multiple files are not supported for this operation.");
+            FilePickerResult::Multiple(paths) => {
+                if paths.len() > 1 {
+                    panic!("Multiple files are not supported for this operation.");
+                }
+                UploadFile::from(paths[0].clone())
             }
         }
     }
