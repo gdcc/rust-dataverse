@@ -1,16 +1,15 @@
 name: Build Dist
 on:
   workflow_dispatch:
-  push:
 
 jobs:
   # Run 'dist plan' (or host) to determine what tasks we need to do
   plan:
-    runs-on: 'ubuntu-22.04'
+    runs-on: "ubuntu-22.04"
     outputs:
       val: ${{ steps.plan.outputs.manifest }}
-      tag: ''
-      tag-flag: ''
+      tag: ""
+      tag-flag: ""
       publishing: ${{ !github.event.pull_request }}
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -33,7 +32,7 @@ jobs:
           echo "dist ran successfully"
           cat plan-dist-manifest.json
           echo "manifest=$(jq -c "." plan-dist-manifest.json)" >> "$GITHUB_OUTPUT"
-      - name: 'Upload dist-manifest.json'
+      - name: "Upload dist-manifest.json"
         uses: actions/upload-artifact@v4
         with:
           name: artifacts-plan-dist-manifest
@@ -94,7 +93,7 @@ jobs:
           echo "EOF" >> "$GITHUB_OUTPUT"
 
           cp dist-manifest.json "$BUILD_MANIFEST_NAME"
-      - name: 'Upload artifacts'
+      - name: "Upload artifacts"
         uses: actions/upload-artifact@v4
         with:
           name: artifacts-build-local-${{ join(matrix.targets, '_') }}
