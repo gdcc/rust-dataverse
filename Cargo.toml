@@ -7,6 +7,7 @@ license = "MIT"
 authors = ["Jan Range <jan.range@simtech.uni-stuttgart.de>"]
 description = "Rust library for interacting with the Dataverse API."
 documentation = "https://guides.dataverse.org/en/latest/"
+exclude = ["tests/fixtures/**"]
 
 [lib]
 name = "dataverse"
