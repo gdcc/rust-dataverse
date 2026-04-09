@@ -1,5 +1,5 @@
 [package]
-name = "dvcli"
+name = "dataverse"
 version = "0.1.0"
 edition = "2021"
 repository = "https://github.com/gdcc/rust-dataverse"
