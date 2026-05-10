@@ -35,7 +35,7 @@ A comprehensive Rust library and command-line interface for interacting with the
 Install the command-line tool directly from the repository:
 
 ```bash
-cargo install --git https://github.com/JR-1991/rust-dataverse.git
+cargo install --git https://github.com/gdcc/rust-dataverse.git
 ```
 
 ### Library Installation
@@ -44,7 +44,7 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-dataverse = { git = "https://github.com/JR-1991/rust-dataverse" }
+dataverse = { git = "https://github.com/gdcc/rust-dataverse" }
 ```
 
 > **Note:** Not yet published on crates.io. Pre-1.0 releases will be available soon.
@@ -220,7 +220,7 @@ cargo test collection::    # module tests
 
 ## Contributing
 
-Contributions are welcome! Whether you're fixing bugs, adding features, or improving documentation, your help is appreciated. Please feel free to open issues or submit pull requests on [GitHub](https://github.com/JR-1991/rust-dataverse).
+Contributions are welcome! Whether you're fixing bugs, adding features, or improving documentation, your help is appreciated. Please feel free to open issues or submit pull requests on [GitHub](https://github.com/gdcc/rust-dataverse).
 
 ## Community
 
